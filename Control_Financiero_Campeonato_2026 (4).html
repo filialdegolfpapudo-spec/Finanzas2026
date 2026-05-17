@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Financiero — Campeonato 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;padding:2rem}
+.container{max-width:1150px;margin:0 auto}
+.header{background:#fff;border-radius:12px;border:0.5px solid #e0e0d8;padding:1.5rem 2rem;margin-bottom:1.5rem}
+.header h1{font-size:20px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:10px}
+.header p{font-size:13px;color:#666;margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:10px;border:0.5px solid #e0e0d8;padding:1rem 1.25rem}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-value{font-size:20px;font-weight:600;color:#1a1a1a}
+.stat-sub{font-size:11px;color:#aaa;margin-top:3px}
+.stat.positivo .stat-value{color:#166534}
+.stat.negativo .stat-value{color:#991b1b}
+.stat.neutro .stat-value{color:#1a4a8a}
+.card{background:#fff;border-radius:12px;border:0.5px solid #e0e0d8;padding:1.25rem 1.5rem;margin-bottom:1.5rem}
+.section-title{font-size:14px;font-weight:600;color:#333;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row-5{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;color:#666;font-weight:500}
+.form-group input,.form-group select,.form-group textarea{font-size:13px;padding:7px 10px;border-radius:8px;border:0.5px solid #ddd;background:#fafaf8;color:#1a1a1a;width:100%;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{border-color:#4a7fc1}
+.form-group input[readonly]{background:#f0f0ec;color:#888}
+.btn-add{background:#1a4a8a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;transition:background .2s}
+.btn-add:hover{background:#1a3a6a}
+.btn-add.egreso{background:#7c1f1f}
+.btn-add.egreso:hover{background:#5a1515}
+.btn-del{background:none;border:none;color:#c0392b;cursor:pointer;padding:5px;border-radius:6px;font-size:16px;line-height:1;transition:background .2s}
+.btn-del:hover{background:#fdecea}
+.btn-edit{background:none;border:none;color:#888;cursor:pointer;padding:5px;border-radius:6px;font-size:16px;line-height:1;transition:background .2s}
+.btn-edit:hover{background:#f0f0ec}
+.table-wrap{overflow-x:auto;border:0.5px solid #e0e0d8;border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#fafaf8;color:#888;font-weight:600;text-align:left;padding:9px 11px;border-bottom:0.5px solid #e0e0d8;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:8px 11px;border-bottom:0.5px solid #f0f0ec;color:#1a1a1a;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-camp{background:#dbeafe;color:#1e40af}
+.badge-sem{background:#dcfce7;color:#166534}
+.badge-cuota{background:#ede9fe;color:#5b21b6}
+.badge-otro{background:#fef3c7;color:#92400e}
+.badge-arr{background:#fce7f3;color:#9d174d}
+.badge-serv{background:#d1fae5;color:#065f46}
+.badge-prem{background:#dbeafe;color:#1e3a8a}
+.badge-egr{background:#fee2e2;color:#991b1b}
+.total-row td{font-weight:600;background:#f5f5f0;color:#1a1a1a}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.filters label{font-size:12px;color:#888}
+.filters select{font-size:12px;padding:5px 9px;border-radius:7px;border:0.5px solid #ddd;background:#fafaf8;color:#1a1a1a}
+.msg{font-size:12px;margin-top:8px;min-height:16px;font-weight:500}
+.msg.ok{color:#166534}
+.msg.err{color:#c0392b}
+.tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid #e0e0d8;overflow-x:auto}
+.tab{padding:9px 18px;font-size:13px;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500;transition:color .2s;white-space:nowrap}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a4a8a}
+.tab:hover{color:#333}
+.panel{display:none}.panel.active{display:block}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px}
+.btn-export{background:#fff;color:#555;border:0.5px solid #ddd;border-radius:8px;padding:6px 13px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.btn-export:hover{background:#f5f5f0}
+.chart-wrap{background:#fff;border-radius:12px;border:0.5px solid #e0e0d8;padding:1.5rem;margin-bottom:1.5rem}
+.chart-title{font-size:14px;font-weight:600;color:#333;margin-bottom:1.25rem}
+.concil-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem}
+.concil-card{background:#fff;border-radius:12px;border:0.5px solid #e0e0d8;padding:1.25rem 1.5rem}
+.concil-card h3{font-size:13px;font-weight:600;color:#555;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.5px}
+.concil-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid #f0f0ec;font-size:13px}
+.concil-row:last-child{border-bottom:none;font-weight:600;padding-top:10px;margin-top:4px;border-top:1px solid #e0e0d8}
+.concil-row .lbl{color:#555}
+.concil-row .val{font-weight:500}
+.val.ing{color:#166534}
+.val.egr{color:#991b1b}
+.val.pos{color:#166534;font-size:16px}
+.val.neg{color:#991b1b;font-size:16px}
+.saldo-box{background:#fff;border-radius:12px;border:2px solid #e0e0d8;padding:1.5rem 2rem;margin-bottom:1.5rem;text-align:center}
+.saldo-box.positivo{border-color:#bbf7d0}
+.saldo-box.negativo{border-color:#fecaca}
+.saldo-box .saldo-label{font-size:13px;color:#888;margin-bottom:6px}
+.saldo-box .saldo-monto{font-size:32px;font-weight:700}
+.saldo-box.positivo .saldo-monto{color:#166534}
+.saldo-box.negativo .saldo-monto{color:#991b1b}
+.saldo-box .saldo-sub{font-size:12px;color:#aaa;margin-top:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.concil-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.stats{grid-template-columns:1fr}.form-row,.form-row-5{grid-template-columns:1fr}}
+@media print{body{background:#fff;padding:0}.btn-add,.btn-del,.btn-edit,.btn-export,.filters,.add-form,.tabs{display:none!important}.card,.header,.stat{box-shadow:none;border:1px solid #ddd}.panel{display:block!important}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+    <div style="flex:1;min-width:260px">
+      <h1><i class="ti ti-trophy" style="font-size:20px;color:#1a4a8a"></i>Control Financiero — Campeonato 2026</h1>
+      <p>Ingresos · Egresos · Conciliación &nbsp;·&nbsp; Período: Marzo – en adelante &nbsp;·&nbsp; Valores en pesos chilenos (CLP)</p>
+      <p style="margin-top:6px;font-size:11px;color:#166534;font-weight:500">
+        <i class="ti ti-circle-check" style="font-size:12px"></i>
+        Los datos se guardan automáticamente en la nube ☁ — accesible desde cualquier computador o celular con el mismo link.
+      </p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="exportarTodo()"
+        style="background:#fff;border:0.5px solid #ddd;color:#555;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:500">
+        <i class="ti ti-download" style="font-size:13px"></i>Exportar CSV
+      </button>
+    </div>
+  </div>
+  <div id="guardado-aviso"
+    style="display:none;margin-top:10px;padding:7px 14px;background:#dcfce7;color:#166534;border-radius:8px;font-size:12px;font-weight:600;border:0.5px solid #bbf7d0;align-items:center;gap:6px">
+  </div>
+</div>
+
+<div class="stats" id="stats-global"></div>
+
+<!-- ═══════════ TABS ═══════════ -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('ing-detalle')"><i class="ti ti-arrow-down-circle" style="font-size:13px"></i> Ingresos</div>
+  <div class="tab" onclick="switchTab('ing-resumen')"><i class="ti ti-layout-list" style="font-size:13px"></i> Resumen ingresos</div>
+  <div class="tab" onclick="switchTab('egr-detalle')"><i class="ti ti-arrow-up-circle" style="font-size:13px"></i> Egresos</div>
+  <div class="tab" onclick="switchTab('egr-resumen')"><i class="ti ti-layout-list" style="font-size:13px"></i> Resumen egresos</div>
+  <div class="tab" onclick="switchTab('concil')"><i class="ti ti-chart-bar" style="font-size:13px"></i> Conciliación</div>
+</div>
+
+<!-- ═══════════ PANEL: INGRESOS DETALLE ═══════════ -->
+<div id="panel-ing-detalle" class="panel active">
+  <div class="card add-form">
+    <div class="section-title"><i class="ti ti-plus" style="font-size:15px;color:#1a4a8a"></i>Agregar ingreso</div>
+    <div class="form-row">
+      <div class="form-group"><label>Mes</label>
+        <select id="i-mes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="i-fecha"></div>
+      <div class="form-group"><label>Día (auto)</label><input type="text" id="i-dia" readonly placeholder="Se llena al elegir fecha"></div>
+      <div class="form-group"><label>Concepto / Tipo</label>
+        <select id="i-concepto">
+          <option value="Campeonato">Campeonato</option>
+          <option value="Campeonato Beneficios">Campeonato Beneficios</option>
+          <option value="Campeonato Abierto">Campeonato Abierto</option>
+          <option value="Semana">Semana (entrenamiento)</option>
+          <option value="Cuota">Cuota mensual</option>
+          <option value="Subvención">Subvención</option>
+          <option value="Arriendo Carros">Arriendo de carros</option>
+          <option value="Premios">Premios / Aportes</option>
+          <option value="Servicios">Servicios / Ventas</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Valor unitario ($)</label><input type="number" id="i-valor" placeholder="4000" min="0"></div>
+      <div class="form-group"><label>Cant. efectivo</label><input type="number" id="i-jeff" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Cant. transf.</label><input type="number" id="i-jtr" placeholder="0" min="0"></div>
+      <div class="form-group"><label style="color:#aaa">Monto efectivo (calc.)</label><input type="text" id="i-mef" readonly></div>
+    </div>
+    <div class="form-row" style="grid-template-columns:1fr 1fr 1fr auto">
+      <div class="form-group"><label style="color:#aaa">Monto transf. (calc.)</label><input type="text" id="i-mtr" readonly></div>
+      <div class="form-group"><label style="color:#aaa">Total cantidad</label><input type="text" id="i-tjug" readonly></div>
+      <div class="form-group"><label style="color:#aaa">Total ingreso (calc.)</label><input type="text" id="i-ting" readonly></div>
+      <div class="form-group" style="justify-content:flex-end;padding-top:18px">
+        <button class="btn-add" onclick="addIngreso()"><i class="ti ti-plus"></i>Agregar</button>
+      </div>
+    </div>
+    <div class="form-group" style="max-width:400px"><label>Observación (opcional)</label><input type="text" id="i-obs" placeholder="Ej: Torneo juvenil, cuota socio #12..."></div>
+    <div class="msg" id="i-msg"></div>
+  </div>
+
+  <div class="top-bar">
+    <div class="section-title" style="margin-bottom:0"><i class="ti ti-table" style="font-size:15px;color:#555"></i>Registros de ingresos</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="filters">
+        <label>Mes:</label>
+        <select onchange="iFilterMes=this.value;renderIngresos()">
+          <option value="">Todos</option><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option>
+        </select>
+        <label>Concepto:</label>
+        <select onchange="iFilterConc=this.value;renderIngresos()">
+          <option value="">Todos</option>
+          <option value="Campeonato">Campeonato</option>
+          <option value="Campeonato Beneficios">Campeonato Beneficios</option>
+          <option value="Campeonato Abierto">Campeonato Abierto</option>
+          <option value="Semana">Semana</option>
+          <option value="Cuota">Cuota</option>
+          <option value="Subvención">Subvención</option>
+          <option value="Arriendo Carros">Arriendo de carros</option>
+          <option value="Premios">Premios</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <button class="btn-export" onclick="exportCSV('ing')"><i class="ti ti-download" style="font-size:14px"></i>CSV</button>
+      <button class="btn-export" onclick="window.print()"><i class="ti ti-printer" style="font-size:14px"></i>Imprimir</button>
+    </div>
+  </div>
+  <br>
+  <div class="table-wrap">
+    <table><thead><tr>
+      <th>Mes</th><th>Fecha</th><th>Día</th><th>Concepto</th>
+      <th style="text-align:right">Val. unit.</th>
+      <th style="text-align:right">Cant. efec.</th>
+      <th style="text-align:right">M. efectivo</th>
+      <th style="text-align:right">Cant. transf.</th>
+      <th style="text-align:right">M. transf.</th>
+      <th style="text-align:right">Total cant.</th>
+      <th style="text-align:right">Total ingreso</th>
+      <th>Observación</th><th></th>
+    </tr></thead>
+    <tbody id="i-tbody"></tbody>
+    <tfoot id="i-tfoot"></tfoot></table>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL: RESUMEN INGRESOS ═══════════ -->
+<div id="panel-ing-resumen" class="panel">
+  <div class="top-bar">
+    <div class="section-title" style="margin-bottom:0"><i class="ti ti-layout-list" style="font-size:15px;color:#555"></i>Resumen de ingresos por mes y concepto</div>
+  </div><br>
+  <div class="table-wrap">
+    <table><thead><tr>
+      <th>Mes</th><th>Concepto</th>
+      <th style="text-align:right">Cant. efec.</th>
+      <th style="text-align:right">M. efectivo ($)</th>
+      <th style="text-align:right">Cant. transf.</th>
+      <th style="text-align:right">M. transf. ($)</th>
+      <th style="text-align:right">Total cant.</th>
+      <th style="text-align:right">Total ingreso ($)</th>
+    </tr></thead>
+    <tbody id="ir-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL: EGRESOS DETALLE ═══════════ -->
+<div id="panel-egr-detalle" class="panel">
+  <div class="card add-form">
+    <div class="section-title"><i class="ti ti-plus" style="font-size:15px;color:#7c1f1f"></i>Agregar egreso</div>
+    <div class="form-row">
+      <div class="form-group"><label>Mes</label>
+        <select id="e-mes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="e-fecha"></div>
+      <div class="form-group"><label>Día (auto)</label><input type="text" id="e-dia" readonly placeholder="Se llena al elegir fecha"></div>
+      <div class="form-group"><label>Concepto / Tipo</label>
+        <select id="e-concepto">
+          <option value="Combustible">Combustible</option>
+          <option value="Escritorios">Escritorios / Mobiliario</option>
+          <option value="Trofeos">Trofeos / Premiación</option>
+          <option value="Equipamiento">Equipamiento deportivo</option>
+          <option value="Proyección">Proyección / Tecnología</option>
+          <option value="Compras">Compras generales</option>
+          <option value="Publicidad">Publicidad / Marketing</option>
+          <option value="Alimentación">Alimentación / Colación</option>
+          <option value="Arriendo">Arriendos</option>
+          <option value="Servicios básicos">Servicios básicos</option>
+          <option value="Administrativo">Gastos administrativos</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" style="grid-template-columns:1fr 1fr 1fr auto">
+      <div class="form-group"><label>Monto ($)</label><input type="number" id="e-monto" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Forma de pago</label>
+        <select id="e-fpago">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Transferencia">Transferencia</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Débito">Débito</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Proveedor / A quién</label><input type="text" id="e-prov" placeholder="Ej: Municipalidad, Juan Pérez..."></div>
+      <div class="form-group" style="justify-content:flex-end;padding-top:18px">
+        <button class="btn-add egreso" onclick="addEgreso()"><i class="ti ti-plus"></i>Agregar</button>
+      </div>
+    </div>
+    <div class="form-group" style="max-width:400px"><label>Observación (opcional)</label><input type="text" id="e-obs" placeholder="Notas adicionales..."></div>
+    <div class="msg" id="e-msg"></div>
+  </div>
+
+  <div class="top-bar">
+    <div class="section-title" style="margin-bottom:0"><i class="ti ti-table" style="font-size:15px;color:#555"></i>Registros de egresos</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="filters">
+        <label>Mes:</label>
+        <select onchange="eFilterMes=this.value;renderEgresos()">
+          <option value="">Todos</option><option value="Enero">Enero</option><option value="Febrero">Febrero</option><option value="Marzo">Marzo</option><option value="Abril">Abril</option><option value="Mayo">Mayo</option><option value="Junio">Junio</option><option value="Julio">Julio</option><option value="Agosto">Agosto</option><option value="Septiembre">Septiembre</option><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Diciembre">Diciembre</option>
+        </select>
+        <label>Concepto:</label>
+        <select onchange="eFilterConc=this.value;renderEgresos()">
+          <option value="">Todos</option>
+          <option value="Combustible">Combustible</option>
+          <option value="Escritorios">Escritorios / Mobiliario</option>
+          <option value="Trofeos">Trofeos / Premiación</option>
+          <option value="Equipamiento">Equipamiento deportivo</option>
+          <option value="Proyección">Proyección / Tecnología</option>
+          <option value="Compras">Compras generales</option>
+          <option value="Publicidad">Publicidad</option>
+          <option value="Alimentación">Alimentación / Colación</option>
+          <option value="Arriendo">Arriendos</option>
+          <option value="Servicios básicos">Servicios básicos</option>
+          <option value="Administrativo">Administrativo</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <button class="btn-export" onclick="exportCSV('egr')"><i class="ti ti-download" style="font-size:14px"></i>CSV</button>
+      <button class="btn-export" onclick="window.print()"><i class="ti ti-printer" style="font-size:14px"></i>Imprimir</button>
+    </div>
+  </div>
+  <br>
+  <div class="table-wrap">
+    <table><thead><tr>
+      <th>Mes</th><th>Fecha</th><th>Día</th><th>Concepto</th>
+      <th style="text-align:right">Monto ($)</th>
+      <th>Forma pago</th><th>Proveedor</th><th>Observación</th><th></th>
+    </tr></thead>
+    <tbody id="e-tbody"></tbody>
+    <tfoot id="e-tfoot"></tfoot></table>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL: RESUMEN EGRESOS ═══════════ -->
+<div id="panel-egr-resumen" class="panel">
+  <div class="top-bar">
+    <div class="section-title" style="margin-bottom:0"><i class="ti ti-layout-list" style="font-size:15px;color:#555"></i>Resumen de egresos por mes y concepto</div>
+  </div><br>
+  <div class="table-wrap">
+    <table><thead><tr>
+      <th>Mes</th><th>Concepto</th>
+      <th style="text-align:right">Nº registros</th>
+      <th style="text-align:right">Monto ($)</th>
+      <th style="text-align:right">% del total</th>
+    </tr></thead>
+    <tbody id="er-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL: CONCILIACIÓN ═══════════ -->
+<div id="panel-concil" class="panel">
+
+  <!-- ESTADO DE CUENTAS BANCARIAS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1rem">
+
+    <!-- CUENTA 1: Cuenta de Ahorro Platino -->
+    <div class="card" style="margin-bottom:0;border-left:4px solid #1a4a8a">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div class="section-title" style="margin-bottom:0">
+          <i class="ti ti-building-bank" style="font-size:15px;color:#1a4a8a"></i>Cuenta de Ahorro
+        </div>
+        <span style="font-size:10px;color:#aaa;background:#f0f0ec;padding:2px 7px;border-radius:6px">Platino Giro Incondicional</span>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:10px">N° 21961274335</div>
+
+      <!-- Saldo disponible editable -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Saldo disponible ($)</div>
+          <input type="number" id="c1-disp" value="1139850" min="0"
+            style="font-size:17px;font-weight:700;color:#1a4a8a;border:0.5px solid #b3c8e8;border-radius:8px;padding:6px 10px;background:#f0f5ff;width:100%;outline:none"
+            oninput="actualizarBanco()">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Saldo contable ($)</div>
+          <input type="number" id="c1-cont" value="1139850" min="0"
+            style="font-size:17px;font-weight:700;color:#374151;border:0.5px solid #ddd;border-radius:8px;padding:6px 10px;background:#fafaf8;width:100%;outline:none"
+            oninput="actualizarBanco()">
+        </div>
+      </div>
+
+      <!-- Datos adicionales -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:#888;background:#f8f8f5;border-radius:8px;padding:8px 10px;margin-bottom:10px">
+        <div><span style="color:#aaa">Retenciones</span><br><strong style="color:#1a1a1a">$0</strong></div>
+        <div><span style="color:#aaa">Bloqueos</span><br><strong style="color:#1a1a1a">$0</strong></div>
+        <div><span style="color:#aaa">Giros del período</span><br><strong style="color:#1a1a1a">0</strong></div>
+        <div><span style="color:#aaa">Últ. movimiento</span><br><strong style="color:#1a1a1a">05-02-2025</strong></div>
+      </div>
+
+      <!-- Fecha y responsable -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Fecha revisión</div>
+          <input type="date" id="c1-fecha" style="font-size:12px;border:0.5px solid #ddd;border-radius:7px;padding:5px 8px;background:#fafaf8;width:100%;outline:none">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Responsable</div>
+          <input type="text" id="c1-resp" placeholder="Nombre" style="font-size:12px;border:0.5px solid #ddd;border-radius:7px;padding:5px 8px;background:#fafaf8;width:100%;outline:none">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:3px">Observación</div>
+      <input type="text" id="c1-obs" placeholder="Ej: Revisado cartola 14/05/2026..."
+        style="font-size:12px;border:0.5px solid #ddd;border-radius:7px;padding:5px 8px;background:#fafaf8;width:100%;outline:none;margin-bottom:10px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="guardarCuenta(1)" class="btn-add" style="font-size:12px;padding:6px 14px">
+          <i class="ti ti-device-floppy"></i>Guardar
+        </button>
+        <div class="msg" id="c1-msg" style="margin-top:0"></div>
+      </div>
+      <!-- Historial -->
+      <div style="margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:#888;margin-bottom:4px"><i class="ti ti-history" style="font-size:12px"></i> Historial</div>
+        <div id="c1-historial" style="font-size:11px;color:#888;max-height:100px;overflow-y:auto">
+          <div style="color:#bbb;font-style:italic">Sin registros aún</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUENTA 2: Chequera Electrónica -->
+    <div class="card" style="margin-bottom:0;border-left:4px solid #7c1f6e">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div class="section-title" style="margin-bottom:0">
+          <i class="ti ti-credit-card" style="font-size:15px;color:#7c1f6e"></i>Chequera Electrónica
+        </div>
+        <span style="font-size:10px;color:#aaa;background:#f0f0ec;padding:2px 7px;border-radius:6px">Cuenta corriente</span>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:10px">N° 21970488798</div>
+
+      <!-- Saldo disponible editable -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Saldo disponible ($)</div>
+          <input type="number" id="c2-disp" value="1001519" min="0"
+            style="font-size:17px;font-weight:700;color:#7c1f6e;border:0.5px solid #d8b3d5;border-radius:8px;padding:6px 10px;background:#fdf5fc;width:100%;outline:none"
+            oninput="actualizarBanco()">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Saldo contable ($)</div>
+          <input type="number" id="c2-cont" value="1001519" min="0"
+            style="font-size:17px;font-weight:700;color:#374151;border:0.5px solid #ddd;border-radius:8px;padding:6px 10px;background:#fafaf8;width:100%;outline:none"
+            oninput="actualizarBanco()">
+        </div>
+      </div>
+
+      <!-- Datos adicionales -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;font-size:11px;color:#888;background:#f8f8f5;border-radius:8px;padding:8px 10px;margin-bottom:10px">
+        <div><span style="color:#aaa">1 día</span><br><strong style="color:#1a1a1a">$0</strong></div>
+        <div><span style="color:#aaa">2 días</span><br><strong style="color:#1a1a1a">$0</strong></div>
+        <div><span style="color:#aaa">N días</span><br><strong style="color:#1a1a1a">$0</strong></div>
+        <div><span style="color:#aaa">Varias</span><br><strong style="color:#1a1a1a">$0</strong></div>
+      </div>
+
+      <!-- Fecha y responsable -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Fecha revisión</div>
+          <input type="date" id="c2-fecha" style="font-size:12px;border:0.5px solid #ddd;border-radius:7px;padding:5px 8px;background:#fafaf8;width:100%;outline:none">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Responsable</div>
+          <input type="text" id="c2-resp" placeholder="Nombre" style="font-size:12px;border:0.5px solid #ddd;border-radius:7px;padding:5px 8px;background:#fafaf8;width:100%;outline:none">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:3px">Observación</div>
+      <input type="text" id="c2-obs" placeholder="Ej: Revisado cartola en línea 14/05/2026..."
+        style="font-size:12px;border:0.5px solid #ddd;border-radius:7px;padding:5px 8px;background:#fafaf8;width:100%;outline:none;margin-bottom:10px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="guardarCuenta(2)" class="btn-add" style="font-size:12px;padding:6px 14px;background:#7c1f6e">
+          <i class="ti ti-device-floppy"></i>Guardar
+        </button>
+        <div class="msg" id="c2-msg" style="margin-top:0"></div>
+      </div>
+      <!-- Historial -->
+      <div style="margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:#888;margin-bottom:4px"><i class="ti ti-history" style="font-size:12px"></i> Historial</div>
+        <div id="c2-historial" style="font-size:11px;color:#888;max-height:100px;overflow-y:auto">
+          <div style="color:#bbb;font-style:italic">Sin registros aún</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RESUMEN TOTAL BANCOS vs SISTEMA -->
+  <div class="card" style="margin-bottom:1.5rem;border-left:4px solid #166534">
+    <div class="section-title" style="margin-bottom:0.75rem">
+      <i class="ti ti-scale" style="font-size:16px;color:#166534"></i>Comparación total bancos vs sistema
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="background:#f0f5ff;border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">Cuenta ahorro (disp.)</div>
+        <div style="font-size:16px;font-weight:700;color:#1a4a8a" id="res-c1">$1.139.850</div>
+      </div>
+      <div style="background:#fdf5fc;border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">Chequera (disp.)</div>
+        <div style="font-size:16px;font-weight:700;color:#7c1f6e" id="res-c2">$1.001.519</div>
+      </div>
+      <div style="background:#f0f5ff;border-radius:8px;padding:10px 12px">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">Total bancos</div>
+        <div style="font-size:16px;font-weight:700;color:#1a4a8a" id="res-total-banco">$2.141.369</div>
+      </div>
+      <div style="border-radius:8px;padding:10px 12px;background:#f5f5f0">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">Saldo sistema (Ing−Egr)</div>
+        <div style="font-size:16px;font-weight:700" id="res-sistema">$0</div>
+      </div>
+    </div>
+    <div id="res-diferencia-wrap" style="margin-top:10px;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;text-align:center;background:#dcfce7;color:#166534">
+      ✓ Sin diferencia registrada aún
+    </div>
+  </div>
+
+  <div id="saldo-box" class="saldo-box positivo">
+    <div class="saldo-label">Saldo neto acumulado (Ingresos − Egresos)</div>
+    <div class="saldo-monto" id="saldo-monto">$0</div>
+    <div class="saldo-sub" id="saldo-sub"></div>
+  </div>
+
+  <div class="concil-grid" id="concil-mes-grid"></div>
+
+  <div class="chart-wrap">
+    <div class="chart-title"><i class="ti ti-chart-bar" style="font-size:15px;color:#1a4a8a"></i> Comparativo mensual — Ingresos vs Egresos vs Saldo</div>
+    <canvas id="concilChart" height="90"></canvas>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title"><i class="ti ti-chart-pie" style="font-size:15px;color:#7c1f1f"></i> Distribución de egresos por concepto</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center">
+      <canvas id="pieChart" height="160"></canvas>
+      <div id="pie-legend" style="font-size:12px;color:#555;line-height:1.9"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /container -->
+
+<script>
+const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const fmt=n=>'$'+Math.round(n).toLocaleString('es-CL');
+const pct=(n,t)=>t?((n/t)*100).toFixed(1)+'%':'0%';
+
+let iFilterMes='',iFilterConc='',eFilterMes='',eFilterConc='';
+
+// ─── CONCEPTO BADGE MAP ───
+const concBadge={
+  'Campeonato':'badge-camp','Campeonato Beneficios':'badge-prem','Campeonato Abierto':'badge-cuota',
+  'Semana':'badge-sem','Cuota':'badge-cuota','Subvención':'badge-serv','Arriendo Carros':'badge-arr',
+  'Premios':'badge-prem','Servicios':'badge-serv','Otro':'badge-otro',
+  'Combustible':'badge-otro','Escritorios':'badge-otro','Trofeos':'badge-prem',
+  'Equipamiento':'badge-otro','Proyección':'badge-cuota','Compras':'badge-otro',
+  'Publicidad':'badge-otro','Alimentación':'badge-otro','Arriendo':'badge-arr',
+  'Servicios básicos':'badge-otro','Administrativo':'badge-otro'
+};
+const badgeHtml=(c)=>`<span class="badge ${concBadge[c]||'badge-otro'}">${c}</span>`;
+
+// ─── DATOS INGRESOS ───
+let ingresos=[
+  {mes:'Marzo',fecha:'08-03-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:12,jtr:11,obs:''},
+  {mes:'Marzo',fecha:'10-03-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:2,jtr:1,obs:''},
+  {mes:'Marzo',fecha:'12-03-2026',dia:'Jueves',concepto:'Semana',valor:2000,jeff:4,jtr:8,obs:''},
+  {mes:'Marzo',fecha:'15-03-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:8,jtr:21,obs:''},
+  {mes:'Marzo',fecha:'22-03-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:8,jtr:21,obs:''},
+  {mes:'Marzo',fecha:'24-03-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:2,jtr:8,obs:''},
+  {mes:'Marzo',fecha:'26-03-2026',dia:'Jueves',concepto:'Semana',valor:2000,jeff:2,jtr:4,obs:''},
+  {mes:'Marzo',fecha:'29-03-2026',dia:'Domingo',concepto:'Campeonato',valor:5000,jeff:12,jtr:20,obs:'Valor entrada $5.000'},
+  {mes:'Marzo',fecha:'31-03-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:3,jtr:8,obs:''},
+  {mes:'Abril',fecha:'05-04-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:8,jtr:16,obs:''},
+  {mes:'Abril',fecha:'07-04-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:3,jtr:6,obs:''},
+  {mes:'Abril',fecha:'09-04-2026',dia:'Jueves',concepto:'Semana',valor:2000,jeff:3,jtr:4,obs:''},
+  {mes:'Abril',fecha:'12-04-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:6,jtr:17,obs:''},
+  {mes:'Abril',fecha:'14-04-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:3,jtr:7,obs:''},
+  {mes:'Abril',fecha:'16-04-2026',dia:'Jueves',concepto:'Semana',valor:2000,jeff:3,jtr:7,obs:''},
+  {mes:'Abril',fecha:'19-04-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:7,jtr:17,obs:''},
+  {mes:'Abril',fecha:'21-04-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:2,jtr:0,obs:''},
+  {mes:'Abril',fecha:'23-04-2026',dia:'Jueves',concepto:'Semana',valor:2000,jeff:2,jtr:6,obs:''},
+  {mes:'Abril',fecha:'26-04-2026',dia:'Domingo',concepto:'Campeonato',valor:4000,jeff:10,jtr:18,obs:''},
+  {mes:'Abril',fecha:'28-04-2026',dia:'Martes',concepto:'Semana',valor:2000,jeff:3,jtr:7,obs:''}
+];
+
+// ─── DATOS EGRESOS ───
+let egresos=[
+  {mes:'Marzo',fecha:'08-03-2026',dia:'Domingo',concepto:'Arriendo',monto:30000,fpago:'Transferencia',prov:'Municipalidad',obs:'Cancha principal — ejemplo, eliminar'},
+  {mes:'Marzo',fecha:'15-03-2026',dia:'Domingo',concepto:'Trofeos',monto:15000,fpago:'Efectivo',prov:'Proveedor ejemplo',obs:'Ejemplo ficticio, eliminar'},
+  {mes:'Marzo',fecha:'29-03-2026',dia:'Domingo',concepto:'Alimentación',monto:50000,fpago:'Efectivo',prov:'Varios',obs:'Ejemplo ficticio, eliminar'},
+  {mes:'Abril',fecha:'05-04-2026',dia:'Domingo',concepto:'Arriendo',monto:30000,fpago:'Transferencia',prov:'Municipalidad',obs:'Ejemplo ficticio, eliminar'},
+  {mes:'Abril',fecha:'12-04-2026',dia:'Domingo',concepto:'Combustible',monto:15000,fpago:'Efectivo',prov:'COPEC',obs:'Ejemplo ficticio, eliminar'},
+  {mes:'Abril',fecha:'26-04-2026',dia:'Domingo',concepto:'Trofeos',monto:60000,fpago:'Efectivo',prov:'Varios',obs:'Ejemplo ficticio, eliminar'}
+];
+
+// ─── HISTORIAL CUENTAS ───
+let historialC1=[];
+let historialC2=[];
+
+// ─── CALC INGRESO ───
+function calcI(r){
+  return{mef:r.jeff*r.valor,mtr:r.jtr*r.valor,tjug:r.jeff+r.jtr,ting:(r.jeff+r.jtr)*r.valor};
+}
+
+// ─── RENDER INGRESOS ───
+function renderIngresos(){
+  const filtered=ingresos.filter(r=>(!iFilterMes||r.mes===iFilterMes)&&(!iFilterConc||r.concepto===iFilterConc));
+  const tbody=document.getElementById('i-tbody');
+  tbody.innerHTML='';
+  let tJeff=0,tJtr=0,tMef=0,tMtr=0,tTjug=0,tTing=0;
+  filtered.forEach(r=>{
+    const c=calcI(r);tJeff+=r.jeff;tJtr+=r.jtr;tMef+=c.mef;tMtr+=c.mtr;tTjug+=c.tjug;tTing+=c.ting;
+    const ri=ingresos.indexOf(r);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.mes}</td><td>${r.fecha}</td><td>${r.dia}</td>
+      <td>${badgeHtml(r.concepto)}</td>
+      <td style="text-align:right">${fmt(r.valor)}</td>
+      <td style="text-align:right">${r.jeff}</td>
+      <td style="text-align:right">${fmt(c.mef)}</td>
+      <td style="text-align:right">${r.jtr}</td>
+      <td style="text-align:right">${fmt(c.mtr)}</td>
+      <td style="text-align:right">${c.tjug}</td>
+      <td style="text-align:right">${fmt(c.ting)}</td>
+      <td style="color:#888;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${r.obs||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="editIngreso(${ri})"><i class="ti ti-edit"></i></button>
+        <button class="btn-del" onclick="delIngreso(${ri})"><i class="ti ti-trash"></i></button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('i-tfoot').innerHTML=`<tr class="total-row">
+    <td colspan="4">TOTAL INGRESOS</td><td></td>
+    <td style="text-align:right">${tJeff}</td><td style="text-align:right">${fmt(tMef)}</td>
+    <td style="text-align:right">${tJtr}</td><td style="text-align:right">${fmt(tMtr)}</td>
+    <td style="text-align:right">${tTjug}</td><td style="text-align:right">${fmt(tTing)}</td>
+    <td></td><td></td></tr>`;
+  renderResumenIngresos();
+  updateGlobalStats();
+  if(document.getElementById('panel-concil').classList.contains('active'))renderConcil();
+}
+
+// ─── RENDER RESUMEN INGRESOS ───
+function renderResumenIngresos(){
+  const meses=[...new Set(ingresos.map(r=>r.mes))];
+  const conceptos=[...new Set(ingresos.map(r=>r.concepto))];
+  const tbody=document.getElementById('ir-tbody');tbody.innerHTML='';
+  const totGlobal={jeff:0,jtr:0,mef:0,mtr:0,tjug:0,ting:0};
+  meses.forEach(mes=>{
+    const mesTotal={jeff:0,jtr:0,mef:0,mtr:0,tjug:0,ting:0};
+    const conceptosMes=[...new Set(ingresos.filter(r=>r.mes===mes).map(r=>r.concepto))];
+    conceptosMes.forEach(conc=>{
+      const sub=ingresos.filter(r=>r.mes===mes&&r.concepto===conc);
+      const c=sub.reduce((a,r)=>{const cc=calcI(r);return{jeff:a.jeff+r.jeff,jtr:a.jtr+r.jtr,mef:a.mef+cc.mef,mtr:a.mtr+cc.mtr,tjug:a.tjug+cc.tjug,ting:a.ting+cc.ting};},{jeff:0,jtr:0,mef:0,mtr:0,tjug:0,ting:0});
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${conc===conceptosMes[0]?mes:''}</td>
+        <td>${badgeHtml(conc)}</td>
+        <td style="text-align:right">${c.jeff}</td><td style="text-align:right">${fmt(c.mef)}</td>
+        <td style="text-align:right">${c.jtr}</td><td style="text-align:right">${fmt(c.mtr)}</td>
+        <td style="text-align:right">${c.tjug}</td><td style="text-align:right">${fmt(c.ting)}</td>`;
+      tbody.appendChild(tr);
+      ['jeff','jtr','mef','mtr','tjug','ting'].forEach(k=>{mesTotal[k]+=c[k];totGlobal[k]+=c[k];});
+    });
+    const tr=document.createElement('tr');tr.className='total-row';
+    tr.innerHTML=`<td colspan="2">Subtotal ${mes}</td>
+      <td style="text-align:right">${mesTotal.jeff}</td><td style="text-align:right">${fmt(mesTotal.mef)}</td>
+      <td style="text-align:right">${mesTotal.jtr}</td><td style="text-align:right">${fmt(mesTotal.mtr)}</td>
+      <td style="text-align:right">${mesTotal.tjug}</td><td style="text-align:right">${fmt(mesTotal.ting)}</td>`;
+    tbody.appendChild(tr);
+  });
+  const tr=document.createElement('tr');tr.className='total-row';tr.style.borderTop='2px solid #ccc';
+  tr.innerHTML=`<td colspan="2">TOTAL ACUMULADO</td>
+    <td style="text-align:right">${totGlobal.jeff}</td><td style="text-align:right">${fmt(totGlobal.mef)}</td>
+    <td style="text-align:right">${totGlobal.jtr}</td><td style="text-align:right">${fmt(totGlobal.mtr)}</td>
+    <td style="text-align:right">${totGlobal.tjug}</td><td style="text-align:right">${fmt(totGlobal.ting)}</td>`;
+  tbody.appendChild(tr);
+}
+
+// ─── RENDER EGRESOS ───
+function renderEgresos(){
+  const filtered=egresos.filter(r=>(!eFilterMes||r.mes===eFilterMes)&&(!eFilterConc||r.concepto===eFilterConc));
+  const tbody=document.getElementById('e-tbody');tbody.innerHTML='';
+  let total=0;
+  filtered.forEach(r=>{
+    total+=r.monto;
+    const ri=egresos.indexOf(r);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.mes}</td><td>${r.fecha}</td><td>${r.dia}</td>
+      <td>${badgeHtml(r.concepto)}</td>
+      <td style="text-align:right;color:#991b1b;font-weight:500">${fmt(r.monto)}</td>
+      <td>${r.fpago}</td><td>${r.prov}</td>
+      <td style="color:#888;font-size:11px">${r.obs||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="editEgreso(${ri})"><i class="ti ti-edit"></i></button>
+        <button class="btn-del" onclick="delEgreso(${ri})"><i class="ti ti-trash"></i></button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('e-tfoot').innerHTML=`<tr class="total-row">
+    <td colspan="4">TOTAL EGRESOS</td>
+    <td style="text-align:right;color:#991b1b">${fmt(total)}</td>
+    <td colspan="4"></td></tr>`;
+  renderResumenEgresos();
+  updateGlobalStats();
+  if(document.getElementById('panel-concil').classList.contains('active'))renderConcil();
+}
+
+// ─── RENDER RESUMEN EGRESOS ───
+function renderResumenEgresos(){
+  const meses=[...new Set(egresos.map(r=>r.mes))];
+  const tbody=document.getElementById('er-tbody');tbody.innerHTML='';
+  const totGlobal={count:0,monto:0};
+  meses.forEach(mes=>{
+    const conceptosMes=[...new Set(egresos.filter(r=>r.mes===mes).map(r=>r.concepto))];
+    const mesTotal={count:0,monto:0};
+    const totMes=egresos.filter(r=>r.mes===mes).reduce((a,r)=>a+r.monto,0);
+    conceptosMes.forEach(conc=>{
+      const sub=egresos.filter(r=>r.mes===mes&&r.concepto===conc);
+      const monto=sub.reduce((a,r)=>a+r.monto,0);
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${conc===conceptosMes[0]?mes:''}</td>
+        <td>${badgeHtml(conc)}</td>
+        <td style="text-align:right">${sub.length}</td>
+        <td style="text-align:right;color:#991b1b">${fmt(monto)}</td>
+        <td style="text-align:right">${pct(monto,totMes)}</td>`;
+      tbody.appendChild(tr);
+      mesTotal.count+=sub.length;mesTotal.monto+=monto;
+      totGlobal.count+=sub.length;totGlobal.monto+=monto;
+    });
+    const tr=document.createElement('tr');tr.className='total-row';
+    tr.innerHTML=`<td colspan="2">Subtotal ${mes}</td>
+      <td style="text-align:right">${mesTotal.count}</td>
+      <td style="text-align:right;color:#991b1b">${fmt(mesTotal.monto)}</td>
+      <td style="text-align:right">100%</td>`;
+    tbody.appendChild(tr);
+  });
+  const totMondoGlobal=egresos.reduce((a,r)=>a+r.monto,0);
+  const tr=document.createElement('tr');tr.className='total-row';tr.style.borderTop='2px solid #ccc';
+  tr.innerHTML=`<td colspan="2">TOTAL ACUMULADO</td>
+    <td style="text-align:right">${totGlobal.count}</td>
+    <td style="text-align:right;color:#991b1b">${fmt(totGlobal.monto)}</td>
+    <td style="text-align:right">—</td>`;
+  tbody.appendChild(tr);
+}
+
+// ─── STATS GLOBALES ───
+function updateGlobalStats(){
+  const totI=ingresos.reduce((a,r)=>a+calcI(r).ting,0);
+  const totE=egresos.reduce((a,r)=>a+r.monto,0);
+  const saldo=totI-totE;
+  const totJug=ingresos.reduce((a,r)=>a+calcI(r).tjug,0);
+  const totMef=ingresos.reduce((a,r)=>a+calcI(r).mef,0);
+  document.getElementById('stats-global').innerHTML=`
+    <div class="stat positivo"><div class="stat-label">Total ingresos</div><div class="stat-value">${fmt(totI)}</div><div class="stat-sub">${ingresos.length} registros</div></div>
+    <div class="stat negativo"><div class="stat-label">Total egresos</div><div class="stat-value">${fmt(totE)}</div><div class="stat-sub">${egresos.length} registros</div></div>
+    <div class="stat ${saldo>=0?'positivo':'negativo'}"><div class="stat-label">Saldo neto</div><div class="stat-value">${fmt(saldo)}</div><div class="stat-sub">${saldo>=0?'Superávit':'Déficit'}</div></div>
+    <div class="stat"><div class="stat-label">Efectivo recibido</div><div class="stat-value">${fmt(totMef)}</div><div class="stat-sub">En caja</div></div>
+    <div class="stat neutro"><div class="stat-label">Total participantes</div><div class="stat-value">${totJug}</div><div class="stat-sub">Acumulado</div></div>`;
+}
+
+// ─── CHARTS ───
+let concilChartInstance=null, pieChartInstance=null;
+
+function renderConcil(){
+  const meses=[...new Set([...ingresos.map(r=>r.mes),...egresos.map(r=>r.mes)])];
+  const dataI=meses.map(m=>ingresos.filter(r=>r.mes===m).reduce((a,r)=>a+calcI(r).ting,0));
+  const dataE=meses.map(m=>egresos.filter(r=>r.mes===m).reduce((a,r)=>a+r.monto,0));
+  const dataSaldo=meses.map((m,i)=>dataI[i]-dataE[i]);
+  const totI=ingresos.reduce((a,r)=>a+calcI(r).ting,0);
+  const totE=egresos.reduce((a,r)=>a+r.monto,0);
+  const saldo=totI-totE;
+
+  document.getElementById('saldo-monto').textContent=fmt(saldo);
+  document.getElementById('saldo-box').className='saldo-box '+(saldo>=0?'positivo':'negativo');
+  document.getElementById('saldo-sub').textContent=`Ingresos ${fmt(totI)} — Egresos ${fmt(totE)}`;
+
+  actualizarBanco();
+
+  // Conciliación por mes
+  const grid=document.getElementById('concil-mes-grid');grid.innerHTML='';
+  meses.forEach((mes,i)=>{
+    const card=document.createElement('div');card.className='concil-card';
+    const sal=dataSaldo[i];
+    card.innerHTML=`<h3>${mes}</h3>
+      <div class="concil-row"><span class="lbl"><i class="ti ti-arrow-down-circle" style="color:#166534;font-size:13px"></i> Ingresos</span><span class="val ing">${fmt(dataI[i])}</span></div>
+      <div class="concil-row"><span class="lbl"><i class="ti ti-arrow-up-circle" style="color:#991b1b;font-size:13px"></i> Egresos</span><span class="val egr">${fmt(dataE[i])}</span></div>
+      <div class="concil-row"><span class="lbl">Saldo del mes</span><span class="val ${sal>=0?'pos':'neg'}">${fmt(sal)}</span></div>`;
+    grid.appendChild(card);
+  });
+
+  // Bar chart
+  if(concilChartInstance)concilChartInstance.destroy();
+  concilChartInstance=new Chart(document.getElementById('concilChart'),{
+    type:'bar',
+    data:{
+      labels:meses,
+      datasets:[
+        {label:'Ingresos',data:dataI,backgroundColor:'rgba(22,101,52,0.75)',borderRadius:6,borderSkipped:false},
+        {label:'Egresos',data:dataE,backgroundColor:'rgba(153,27,27,0.7)',borderRadius:6,borderSkipped:false},
+        {label:'Saldo',data:dataSaldo,type:'line',borderColor:'#1a4a8a',backgroundColor:'rgba(26,74,138,0.08)',pointBackgroundColor:'#1a4a8a',pointRadius:5,tension:0.3,fill:true}
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:12}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},scales:{y:{ticks:{callback:v=>fmt(v),font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}}
+  });
+
+  // Pie chart egresos por concepto
+  if(pieChartInstance)pieChartInstance.destroy();
+  const concEgr=[...new Set(egresos.map(r=>r.concepto))];
+  const pieData=concEgr.map(c=>egresos.filter(r=>r.concepto===c).reduce((a,r)=>a+r.monto,0));
+  const colors=['#1e40af','#166534','#991b1b','#92400e','#5b21b6','#065f46','#9d174d','#1a4a8a','#374151'];
+  if(pieChartInstance)pieChartInstance.destroy();
+  pieChartInstance=new Chart(document.getElementById('pieChart'),{
+    type:'doughnut',
+    data:{labels:concEgr,datasets:[{data:pieData,backgroundColor:colors.slice(0,concEgr.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed)}}}}
+  });
+  const totPie=pieData.reduce((a,v)=>a+v,0);
+  document.getElementById('pie-legend').innerHTML=concEgr.map((c,i)=>
+    `<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${colors[i]||'#888'}"></span>${c}: <strong>${fmt(pieData[i])}</strong> (${pct(pieData[i],totPie)})</div>`
+  ).join('');
+}
+
+// ─── ADD / EDIT / DEL INGRESOS ───
+function fmtFechaFromInput(v){
+  const d=new Date(v+'T00:00:00');
+  return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
+}
+
+function addIngreso(){
+  const mes=document.getElementById('i-mes').value;
+  const fecha=document.getElementById('i-fecha').value;
+  const concepto=document.getElementById('i-concepto').value;
+  const valor=parseInt(document.getElementById('i-valor').value)||0;
+  const jeff=parseInt(document.getElementById('i-jeff').value)||0;
+  const jtr=parseInt(document.getElementById('i-jtr').value)||0;
+  const obs=document.getElementById('i-obs').value.trim();
+  if(!fecha){showMsg('i-msg','Ingresa una fecha','err');return;}
+  if(!valor){showMsg('i-msg','Ingresa el valor unitario','err');return;}
+  const d=new Date(fecha+'T00:00:00');
+  ingresos.push({mes,fecha:fmtFechaFromInput(fecha),dia:DIAS[d.getDay()],concepto,valor,jeff,jtr,obs});
+  ingresos.sort((a,b)=>a.fecha.split('-').reverse().join('').localeCompare(b.fecha.split('-').reverse().join('')));
+  renderIngresos();guardarAuto();showMsg('i-msg','Ingreso agregado','ok');
+  ['i-fecha','i-valor','i-jeff','i-jtr','i-mef','i-mtr','i-tjug','i-ting','i-obs'].forEach(id=>document.getElementById(id).value='');
+}
+
+function delIngreso(i){if(!confirm('¿Eliminar este ingreso?'))return;ingresos.splice(i,1);renderIngresos();guardarAuto();showMsg('i-msg','Eliminado','ok');}
+
+function editIngreso(i){
+  const r=ingresos[i];
+  const v=window.prompt('Valor unitario ($):',r.valor);if(v===null)return;
+  const jf=window.prompt('Cantidad efectivo:',r.jeff);if(jf===null)return;
+  const jt=window.prompt('Cantidad transferencia:',r.jtr);if(jt===null)return;
+  const ob=window.prompt('Observación:',r.obs);if(ob===null)return;
+  ingresos[i].valor=parseInt(v)||r.valor;ingresos[i].jeff=parseInt(jf)||0;ingresos[i].jtr=parseInt(jt)||0;ingresos[i].obs=ob;
+  renderIngresos();guardarAuto();showMsg('i-msg','Actualizado','ok');
+}
+
+// ─── ADD / EDIT / DEL EGRESOS ───
+function addEgreso(){
+  const mes=document.getElementById('e-mes').value;
+  const fecha=document.getElementById('e-fecha').value;
+  const concepto=document.getElementById('e-concepto').value;
+  const monto=parseInt(document.getElementById('e-monto').value)||0;
+  const fpago=document.getElementById('e-fpago').value;
+  const prov=document.getElementById('e-prov').value.trim();
+  const obs=document.getElementById('e-obs').value.trim();
+  if(!fecha){showMsg('e-msg','Ingresa una fecha','err');return;}
+  if(!monto){showMsg('e-msg','Ingresa el monto','err');return;}
+  const d=new Date(fecha+'T00:00:00');
+  egresos.push({mes,fecha:fmtFechaFromInput(fecha),dia:DIAS[d.getDay()],concepto,monto,fpago,prov,obs});
+  egresos.sort((a,b)=>a.fecha.split('-').reverse().join('').localeCompare(b.fecha.split('-').reverse().join('')));
+  renderEgresos();guardarAuto();showMsg('e-msg','Egreso agregado','ok');
+  ['e-fecha','e-monto','e-prov','e-obs'].forEach(id=>document.getElementById(id).value='');
+}
+
+function delEgreso(i){if(!confirm('¿Eliminar este egreso?'))return;egresos.splice(i,1);renderEgresos();guardarAuto();showMsg('e-msg','Eliminado','ok');}
+
+function editEgreso(i){
+  const r=egresos[i];
+  const m=window.prompt('Monto ($):',r.monto);if(m===null)return;
+  const p=window.prompt('Proveedor:',r.prov);if(p===null)return;
+  const ob=window.prompt('Observación:',r.obs);if(ob===null)return;
+  egresos[i].monto=parseInt(m)||r.monto;egresos[i].prov=p;egresos[i].obs=ob;
+  renderEgresos();guardarAuto();showMsg('e-msg','Actualizado','ok');
+}
+
+// ─── HELPERS ───
+function showMsg(id,txt,type){
+  const el=document.getElementById(id);el.textContent=txt;el.className='msg '+type;
+  setTimeout(()=>{el.textContent='';el.className='msg';},3000);
+}
+
+function switchTab(name){
+  const tabs=['ing-detalle','ing-resumen','egr-detalle','egr-resumen','concil'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='concil')renderConcil();
+}
+
+function exportarTodo(){
+  // CSV Ingresos
+  const hI='Mes,Fecha,Día,Concepto,Valor Unitario,Cant. Efectivo,Monto Efectivo,Cant. Transf.,Monto Transf.,Total Cant.,Total Ingreso,Observación';
+  const rI=ingresos.map(r=>{const c=calcI(r);return[r.mes,r.fecha,r.dia,r.concepto,r.valor,r.jeff,c.mef,r.jtr,c.mtr,c.tjug,c.ting,r.obs||''].join(',');});
+  descargarCSV([hI,...rI].join('\n'),'Ingresos_Campeonato_2026.csv');
+  // CSV Egresos
+  setTimeout(()=>{
+    const hE='Mes,Fecha,Día,Concepto,Monto,Forma Pago,Proveedor,Observación';
+    const rE=egresos.map(r=>[r.mes,r.fecha,r.dia,r.concepto,r.monto,r.fpago,r.prov,r.obs||''].join(','));
+    descargarCSV([hE,...rE].join('\n'),'Egresos_Campeonato_2026.csv');
+  },600);
+}
+function descargarCSV(csv,nombre){
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=nombre;a.click();
+}
+
+// ─── AUTO-CALC FORM INGRESOS ───
+document.getElementById('i-fecha').addEventListener('change',function(){
+  const d=new Date(this.value+'T00:00:00');
+  if(!isNaN(d))document.getElementById('i-dia').value=DIAS[d.getDay()];
+});
+['i-valor','i-jeff','i-jtr'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',function(){
+    const val=parseInt(document.getElementById('i-valor').value)||0;
+    const jeff=parseInt(document.getElementById('i-jeff').value)||0;
+    const jtr=parseInt(document.getElementById('i-jtr').value)||0;
+    document.getElementById('i-mef').value=val&&jeff?fmt(jeff*val):'';
+    document.getElementById('i-mtr').value=val&&jtr?fmt(jtr*val):'';
+    document.getElementById('i-tjug').value=jeff+jtr||'';
+    document.getElementById('i-ting').value=val?fmt((jeff+jtr)*val):'';
+  });
+});
+document.getElementById('e-fecha').addEventListener('change',function(){
+  const d=new Date(this.value+'T00:00:00');
+  if(!isNaN(d))document.getElementById('e-dia').value=DIAS[d.getDay()];
+});
+
+// ════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════
+// ─── SISTEMA DE GUARDADO — Firebase Realtime Database ──
+// Guarda en la nube de Google automáticamente.
+// Funciona desde cualquier computador o celular.
+// Proyecto: Finanzas 2026 — filialdegolfpapudo@gmail.com
+// ════════════════════════════════════════════════════════
+
+// Configuración Firebase — proyecto campeonato2026
+const firebaseConfig = {
+  apiKey: "AIzaSyAg6fdKRnwcppQ932tK9oia_ETPHIzmFbw",
+  authDomain: "finanzas-2026-ac88e.firebaseapp.com",
+  databaseURL: "https://finanzas-2026-ac88e-default-rtdb.firebaseio.com",
+  projectId: "finanzas-2026-ac88e",
+  storageBucket: "finanzas-2026-ac88e.firebasestorage.app",
+  messagingSenderId: "458435379765",
+  appId: "1:458435379765:web:daf52c59503f79e494677c"
+};
+
+// Inicializar Firebase
+let db = null;
+let firebaseOK = false;
+
+function initFirebase() {
+  try {
+    if (typeof firebase === 'undefined') {
+      console.warn('Firebase SDK no cargado aún');
+      return false;
+    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebaseOK = true;
+    return true;
+  } catch(e) {
+    console.warn('Firebase no disponible, usando localStorage:', e);
+    return false;
+  }
+}
+
+// Intentar inicializar — si falla, reintenta cuando cargue la página
+if (!initFirebase()) {
+  window.addEventListener('load', function() {
+    initFirebase();
+    // Recargar datos con Firebase si ahora está disponible
+    if (firebaseOK) {
+      cargarDatos().then(() => {
+        renderIngresos();
+        renderEgresos();
+        renderHistorialCuenta(1);
+        renderHistorialCuenta(2);
+      });
+    }
+  });
+}
+
+const LS_KEY = 'cf_campeonato_2026';
+
+// Guardar en Firebase (nube) + localStorage (respaldo local)
+async function guardarAuto() {
+  const datos = { ingresos, egresos, historialC1, historialC2, ts: Date.now() };
+
+  // Siempre guardar en localStorage como respaldo
+  try { localStorage.setItem(LS_KEY, JSON.stringify(datos)); } catch(e) {}
+
+  // Guardar en Firebase si está disponible
+  if (firebaseOK && db) {
+    try {
+      await db.ref('control2026').set(datos);
+      mostrarGuardado('En la nube ☁');
+      return;
+    } catch(e) {
+      console.warn('Error Firebase, guardado solo local:', e);
+    }
+  }
+  mostrarGuardado('Local');
+}
+
+function guardar(motivo) { guardarAuto(); }
+
+// Cargar datos desde Firebase al abrir
+async function cargarDatos() {
+  mostrarSincronizando('Cargando datos...');
+
+  if (firebaseOK && db) {
+    try {
+      const snap = await db.ref('control2026').get();
+      if (snap.exists()) {
+        const datos = snap.val();
+        if (datos.ingresos    && datos.ingresos.length    > 0) ingresos    = datos.ingresos;
+        if (datos.egresos     !== undefined)                    egresos     = datos.egresos;
+        if (datos.historialC1 && datos.historialC1.length > 0) historialC1 = datos.historialC1;
+        if (datos.historialC2 && datos.historialC2.length > 0) historialC2 = datos.historialC2;
+        ocultarAviso();
+        return;
+      }
+    } catch(e) {
+      console.warn('Error cargando Firebase:', e);
+    }
+  }
+
+  // Fallback localStorage
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const datos = JSON.parse(raw);
+      if (datos.ingresos    && datos.ingresos.length    > 0) ingresos    = datos.ingresos;
+      if (datos.egresos     !== undefined)                    egresos     = datos.egresos;
+      if (datos.historialC1 && datos.historialC1.length > 0) historialC1 = datos.historialC1;
+      if (datos.historialC2 && datos.historialC2.length > 0) historialC2 = datos.historialC2;
+    }
+  } catch(e) {}
+  ocultarAviso();
+}
+
+let _guardadoTimer = null;
+function mostrarGuardado(extra) {
+  const el = document.getElementById('guardado-aviso');
+  if (!el) return;
+  el.style.display = 'flex';
+  el.style.background = '#dcfce7';
+  el.style.color = '#166534';
+  el.style.borderColor = '#bbf7d0';
+  el.innerHTML = `<i class="ti ti-circle-check" style="font-size:14px"></i>&nbsp;Guardado automáticamente ${extra||''}`;
+  clearTimeout(_guardadoTimer);
+  _guardadoTimer = setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+function mostrarSincronizando(txt) {
+  const el = document.getElementById('guardado-aviso');
+  if (!el) return;
+  el.style.display = 'flex';
+  el.style.background = '#DBEAFE';
+  el.style.color = '#1E40AF';
+  el.style.borderColor = '#93C5FD';
+  el.innerHTML = `<i class="ti ti-refresh" style="font-size:14px"></i>&nbsp;${txt}`;
+}
+
+function ocultarAviso() {
+  const el = document.getElementById('guardado-aviso');
+  if (el) el.style.display = 'none';
+}
+
+function mostrarError(txt) {
+  const el = document.getElementById('guardado-aviso');
+  if (!el) return;
+  el.style.display = 'flex';
+  el.style.background = '#FEE2E2';
+  el.style.color = '#991B1B';
+  el.style.borderColor = '#FCA5A5';
+  el.innerHTML = `<i class="ti ti-alert-circle" style="font-size:14px"></i>&nbsp;${txt}`;
+  setTimeout(() => { if (el) el.style.display = 'none'; }, 6000);
+}
+
+function actualizarBanco(){
+  const c1=parseInt(document.getElementById('c1-disp').value)||0;
+  const c2=parseInt(document.getElementById('c2-disp').value)||0;
+  const totalBanco=c1+c2;
+  const totI=ingresos.reduce((a,r)=>a+calcI(r).ting,0);
+  const totE=egresos.reduce((a,r)=>a+r.monto,0);
+  const saldoSist=totI-totE;
+  const dif=totalBanco-saldoSist;
+
+  document.getElementById('res-c1').textContent=fmt(c1);
+  document.getElementById('res-c2').textContent=fmt(c2);
+  document.getElementById('res-total-banco').textContent=fmt(totalBanco);
+  document.getElementById('res-sistema').textContent=fmt(saldoSist);
+  document.getElementById('res-sistema').style.color=saldoSist>=0?'#166534':'#991b1b';
+
+  // también actualizar panel saldo-box
+  document.getElementById('saldo-monto').textContent=fmt(saldoSist);
+  document.getElementById('saldo-box').className='saldo-box '+(saldoSist>=0?'positivo':'negativo');
+
+  const wrapEl=document.getElementById('res-diferencia-wrap');
+  const difAbs=Math.abs(dif);
+  if(difAbs===0){
+    wrapEl.style.background='#dcfce7';wrapEl.style.color='#166534';
+    wrapEl.textContent='✓ Bancos cuadran perfectamente con el sistema';
+  } else if(difAbs<=10000){
+    wrapEl.style.background='#fef9c3';wrapEl.style.color='#854d0e';
+    wrapEl.textContent=`⚠ Diferencia menor de ${fmt(dif)} — revisar redondeos o movimientos pendientes`;
+  } else {
+    wrapEl.style.background='#fee2e2';wrapEl.style.color='#991b1b';
+    wrapEl.textContent=`✕ Diferencia de ${fmt(dif)} — verificar registros de ingresos y egresos`;
+  }
+}
+
+function guardarCuenta(n){
+  const disp=parseInt(document.getElementById(`c${n}-disp`).value)||0;
+  const cont=parseInt(document.getElementById(`c${n}-cont`).value)||0;
+  const fecha=document.getElementById(`c${n}-fecha`).value;
+  const resp=document.getElementById(`c${n}-resp`).value.trim();
+  const obs=document.getElementById(`c${n}-obs`).value.trim();
+  if(!fecha){showMsg(`c${n}-msg`,'Ingresa la fecha de revisión','err');return;}
+  const d=new Date(fecha+'T00:00:00');
+  const fechaFmt=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  const reg={fecha:fechaFmt,disp,cont,resp,obs};
+  if(n===1) historialC1.unshift(reg);
+  else historialC2.unshift(reg);
+  renderHistorialCuenta(n);
+  guardarAuto();
+  showMsg(`c${n}-msg`,'Guardado','ok');
+}
+
+function renderHistorialCuenta(n){
+  const hist=n===1?historialC1:historialC2;
+  const el=document.getElementById(`c${n}-historial`);
+  if(!hist.length){el.innerHTML='<div style="color:#bbb;font-style:italic">Sin registros aún</div>';return;}
+  const color=n===1?'#1a4a8a':'#7c1f6e';
+  el.innerHTML=hist.map(h=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid #f0f0ec;gap:8px">
+      <div>
+        <span style="font-weight:600;color:#333;font-size:11px">${h.fecha}</span>
+        ${h.resp?`<span style="color:#aaa;font-size:10px;margin-left:5px">· ${h.resp}</span>`:''}
+        ${h.obs?`<div style="color:#bbb;font-size:10px">${h.obs}</div>`:''}
+      </div>
+      <div style="text-align:right;white-space:nowrap">
+        <div style="font-weight:700;color:${color};font-size:12px">${fmt(h.disp)}</div>
+        ${h.cont!==h.disp?`<div style="font-size:10px;color:#aaa">contable: ${fmt(h.cont)}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ─── INIT — cargar datos y renderizar todo ───
+cargarDatos();
+renderIngresos();
+renderEgresos();
+renderHistorialCuenta(1);
+renderHistorialCuenta(2);
+
+// Inicializar fechas con hoy y disparar cálculo
+(function(){
+  const hoy=new Date();
+  const yyyy=hoy.getFullYear();
+  const mm=String(hoy.getMonth()+1).padStart(2,'0');
+  const dd=String(hoy.getDate()).padStart(2,'0');
+  const hoyStr=`${yyyy}-${mm}-${dd}`;
+  document.getElementById('c1-fecha').value=hoyStr;
+  document.getElementById('c2-fecha').value=hoyStr;
+  actualizarBanco();
+})();
+</script>
+</body>
+</html>
