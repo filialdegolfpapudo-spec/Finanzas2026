@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filial de Golf Papudo — Control de Asistencia</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #0D1F4E;
+    --navy2:  #1A2F6B;
+    --green1: #1B5E20;
+    --green2: #2E7D32;
+    --green3: #43A047;
+    --green4: #A5D6A7;
+    --green5: #E8F5E9;
+    --gold:   #F9A825;
+    --gold2:  #FFF8E1;
+    --white:  #FFFFFF;
+    --gray1:  #F5F7FA;
+    --gray2:  #E8ECF2;
+    --gray3:  #9BA8BB;
+    --red:    #C62828;
+    --redbg:  #FFEBEE;
+    --present:#1B5E20;
+    --absent: #C62828;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray1);
+    color: var(--navy);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  header {
+    background: var(--navy);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .ribbon { height: 5px; background: linear-gradient(90deg, var(--green1), var(--green3), var(--green4)); }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 28px;
+  }
+  .logo-circle {
+    width: 52px; height: 52px;
+    background: var(--green2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    border: 2px solid var(--gold);
+  }
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+  }
+  .header-text p {
+    color: var(--green4);
+    font-size: 0.78rem;
+    font-weight: 300;
+    margin-top: 1px;
+  }
+  .header-date {
+    margin-left: auto;
+    color: var(--gray3);
+    font-size: 0.78rem;
+    text-align: right;
+  }
+
+  /* ── NAV TABS ───────────────────────────────────────── */
+  nav {
+    background: var(--navy2);
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 3px solid var(--green2);
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    padding: 11px 20px;
+    background: none;
+    border: none;
+    color: var(--gray3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -3px;
+    transition: all 0.2s;
+  }
+  nav button:hover { color: var(--white); }
+  nav button.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(249,168,37,0.08);
+  }
+
+  /* ── LAYOUT ─────────────────────────────────────────── */
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ──────────────────────────────────────────── */
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(13,31,78,0.08);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .card-header {
+    background: var(--navy);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-header h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+  .card-header span { font-size: 1.2rem; }
+  .card-body { padding: 20px; }
+
+  /* ── DASHBOARD KPI ──────────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 12px rgba(13,31,78,0.08);
+    border-left: 4px solid var(--green2);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    right: -10px; top: -10px;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: var(--green5);
+  }
+  .kpi.navy { border-left-color: var(--navy); }
+  .kpi.navy::before { background: var(--gray2); }
+  .kpi.gold  { border-left-color: var(--gold); }
+  .kpi.gold::before  { background: var(--gold2); }
+  .kpi.red   { border-left-color: var(--red); }
+  .kpi.red::before   { background: var(--redbg); }
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    position: relative;
+  }
+  .kpi-label { font-size: 0.75rem; color: var(--gray3); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; position: relative; }
+
+  /* ── FORMULARIO ─────────────────────────────────────── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .form-group label span { color: var(--red); }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 13px;
+    border: 2px solid var(--gray2);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--navy);
+    background: var(--gold2);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--green2);
+    background: var(--white);
+  }
+
+  /* ── BOTONES ────────────────────────────────────────── */
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--green2); color: var(--white); }
+  .btn-primary:hover { background: var(--green1); transform: translateY(-1px); }
+  .btn-navy { background: var(--navy); color: var(--white); }
+  .btn-navy:hover { background: var(--navy2); }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { filter: brightness(0.92); }
+  .btn-danger { background: var(--red); color: var(--white); }
+  .btn-danger:hover { filter: brightness(0.88); }
+  .btn-sm { padding: 6px 13px; font-size: 0.78rem; }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ── TABLA ──────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--gray2); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th {
+    background: var(--navy);
+    color: var(--gold);
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--gray2); transition: background 0.15s; }
+  tbody tr:hover { background: var(--green5); }
+  tbody tr:nth-child(even) { background: var(--gray1); }
+  tbody tr:nth-child(even):hover { background: var(--green5); }
+  tbody td { padding: 10px 14px; vertical-align: middle; }
+
+  /* ── BADGES ─────────────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge-activo  { background: var(--green5); color: var(--green1); }
+  .badge-pasivo  { background: var(--redbg);  color: var(--red); }
+  .badge-fundador{ background: var(--gold2);  color: #7B5E00; }
+  .badge-pleno   { background: #E3F2FD; color: #0D47A1; }
+  .badge-honorario{ background: #F3E5F5; color: #6A1B9A; }
+
+  /* ── ASISTENCIA TOGGLE ──────────────────────────────── */
+  .asist-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 2px solid var(--gray2);
+    background: var(--gray1);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .asist-btn.presente {
+    background: var(--green5);
+    border-color: var(--green2);
+  }
+  .asist-btn.ausente {
+    background: var(--redbg);
+    border-color: var(--red);
+  }
+  .asist-btn:hover { transform: scale(1.12); }
+
+  /* ── PORCENTAJE BAR ─────────────────────────────────── */
+  .pct-bar { display: flex; align-items: center; gap: 8px; }
+  .bar-track {
+    flex: 1; height: 8px;
+    background: var(--gray2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .pct-num { font-size: 0.78rem; font-weight: 600; min-width: 36px; text-align: right; }
+
+  /* ── MEDALLAS ───────────────────────────────────────── */
+  .medal { font-size: 1rem; margin-right: 3px; }
+
+  /* ── ALERT ──────────────────────────────────────────── */
+  .alert {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--navy);
+    color: var(--white);
+    padding: 13px 20px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    max-width: 300px;
+    border-left: 4px solid var(--green3);
+  }
+  .alert.show { transform: translateY(0); opacity: 1; }
+  .alert.error { border-left-color: var(--red); }
+
+  /* ── MODAL ──────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(13,31,78,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 500;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    padding: 16px;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--white);
+    border-radius: 14px;
+    width: 100%; max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: transform 0.25s;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-header {
+    background: var(--navy);
+    padding: 16px 20px;
+    border-radius: 14px 14px 0 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+  .modal-close {
+    background: none; border: none;
+    color: var(--gray3); font-size: 1.3rem;
+    cursor: pointer; padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .modal-close:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray2); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ── REUNION ASIST GRID ─────────────────────────────── */
+  .asist-grid { display: flex; flex-direction: column; gap: 6px; }
+  .asist-row {
+    display: flex; align-items: center;
+    background: var(--gray1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    gap: 10px;
+  }
+  .asist-row:nth-child(even) { background: var(--green5); }
+  .asist-name { flex: 1; font-size: 0.88rem; font-weight: 500; }
+  .asist-estado { font-size: 0.72rem; }
+
+  /* ── SEARCH ─────────────────────────────────────────── */
+  .search-bar {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .search-input {
+    flex: 1; min-width: 180px;
+    padding: 9px 13px;
+    border: 2px solid var(--gray2);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    background: var(--white);
+  }
+  .search-input:focus { border-color: var(--green2); }
+
+  /* ── EMPTY STATE ────────────────────────────────────── */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray3);
+  }
+  .empty .icon { font-size: 2.5rem; margin-bottom: 10px; }
+  .empty p { font-size: 0.9rem; }
+
+  /* ── RIBBON BOTTOM ──────────────────────────────────── */
+  .section-ribbon {
+    height: 3px;
+    background: linear-gradient(90deg, var(--green1), var(--green3), var(--green4));
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  /* ── RANKING ────────────────────────────────────────── */
+  .ranking-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: var(--white);
+    box-shadow: 0 1px 6px rgba(13,31,78,0.06);
+  }
+  .ranking-pos {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ranking-name { flex: 1; }
+  .ranking-name strong { display: block; font-size: 0.88rem; }
+  .ranking-name span { font-size: 0.75rem; color: var(--gray3); }
+
+  @media(max-width:480px){
+    .header-text h1 { font-size: 1rem; }
+    .kpi-value { font-size: 1.8rem; }
+    nav button { padding: 10px 14px; font-size: 0.78rem; }
+  }
+@media print { .no-print { display: none !important; } }
+</style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="ribbon"></div>
+  <div class="header-inner">
+    <div class="logo-circle">⛳</div>
+    <div class="header-text">
+      <h1>FILIAL DE GOLF PAPUDO</h1>
+      <p>Fund. 1976 · Control de Asistencia de Socios</p>
+    </div>
+    <div class="header-date" id="headerDate"></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:12px">
+      <div id="auth-logged-out" style="display:flex;gap:6px;align-items:center">
+        <input type="email" id="auth-email" placeholder="Correo editor" autocomplete="username"
+          style="font-size:12px;padding:6px 9px;border-radius:7px;border:0.5px solid #ddd;background:#fafaf8;width:150px;outline:none;color:#333">
+        <input type="password" id="auth-pass" placeholder="Clave" autocomplete="current-password"
+          style="font-size:12px;padding:6px 9px;border-radius:7px;border:0.5px solid #ddd;background:#fafaf8;width:100px;outline:none;color:#333"
+          onkeydown="if(event.key==='Enter')iniciarSesion()">
+        <button onclick="iniciarSesion()"
+          style="background:#B8963E;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:600">
+          Iniciar sesión
+        </button>
+      </div>
+      <div id="auth-logged-in" style="display:none;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#fff;font-weight:600">👤 Editor conectado</span>
+        <button onclick="cerrarSesion()"
+          style="background:#fff;border:0.5px solid #ddd;color:#555;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-weight:500">
+          Cerrar sesión
+        </button>
+      </div>
+      <div id="auth-msg" style="font-size:11px;color:#ffd7d1;width:100%;text-align:right"></div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showSection('dashboard')">📊 Dashboard</button>
+  <button onclick="showSection('socios')">👥 Socios</button>
+  <button onclick="showSection('reuniones')">📅 Reuniones</button>
+  <button onclick="showSection('asistencia')">✅ Asistencia</button>
+  <button onclick="showSection('acta')">📝 Acta</button>
+</nav>
+
+<main>
+
+<!-- ══ DASHBOARD ══════════════════════════════════════════════ -->
+<div id="sec-dashboard" class="section active">
+  <div class="section-ribbon"></div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="card">
+    <div class="card-header"><span>🏆</span><h2>Ranking de Asistencia</h2></div>
+    <div class="card-body" id="rankingBody"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span>📅</span><h2>Últimas Reuniones</h2></div>
+    <div class="card-body" id="lastReuniones"></div>
+  </div>
+</div>
+
+<!-- ══ SOCIOS ══════════════════════════════════════════════════ -->
+<div id="sec-socios" class="section">
+  <div class="section-ribbon"></div>
+  <div class="card">
+    <div class="card-header"><span>👥</span><h2>Registro de Socios</h2>
+      <button class="btn btn-gold btn-sm edit-only" style="margin-left:auto" onclick="openModal('modalSocio')">+ Nuevo Socio</button>
+    </div>
+    <div class="card-body">
+      <div class="search-bar">
+        <input class="search-input" type="text" id="searchSocios" placeholder="🔍 Buscar por nombre, apellido o RUT..." oninput="renderSocios()">
+        <select class="search-input" style="flex:0;width:140px" id="filtroEstado" onchange="renderSocios()">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activos</option>
+          <option value="PASIVO">Pasivos</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>N°</th><th>Apellidos</th><th>Nombres</th><th>RUT</th>
+            <th>Teléfono</th><th>Calidad</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tablaSocios"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REUNIONES ═══════════════════════════════════════════════ -->
+<div id="sec-reuniones" class="section">
+  <div class="section-ribbon"></div>
+  <div class="card">
+    <div class="card-header"><span>📅</span><h2>Registro de Reuniones</h2>
+      <button class="btn btn-gold btn-sm edit-only" style="margin-left:auto" onclick="openModal('modalReunion')">+ Nueva Reunión</button>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>N°</th><th>Fecha</th><th>Tipo</th><th>Lugar</th>
+            <th>Tema</th><th>Quórum</th><th>Asistentes</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="tablaReuniones"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ASISTENCIA ══════════════════════════════════════════════ -->
+<div id="sec-asistencia" class="section">
+  <div class="section-ribbon"></div>
+  <div class="card">
+    <div class="card-header"><span>✅</span><h2>Registro de Asistencia</h2></div>
+    <div class="card-body">
+      <div class="search-bar">
+        <select class="search-input" id="selectReunionAsist" onchange="renderAsistencia()">
+          <option value="">— Seleccione una reunión —</option>
+        </select>
+      </div>
+      <div id="asistenciaPanel"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span>📊</span><h2>Resumen por Socio</h2></div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Socio</th><th>Presencias</th><th>Ausencias</th><th>% Asistencia</th>
+          </tr></thead>
+          <tbody id="resumenSocios"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ACTA ════════════════════════════════════════════════════ -->
+<div id="sec-acta" class="section">
+  <div class="section-ribbon"></div>
+  <div class="card">
+    <div class="card-header"><span>📝</span><h2>Acta de Reunión</h2>
+      <select id="selectActaReunion" style="margin-left:auto;padding:5px 10px;border-radius:6px;border:none;font-size:0.82rem;background:var(--gold2);color:var(--navy)" onchange="renderActa()">
+        <option value="">— Seleccione reunión —</option>
+      </select>
+    </div>
+    <div class="card-body" id="actaBody">
+      <div class="empty"><div class="icon">📄</div><p>Seleccione una reunión para generar el acta</p></div>
+    </div>
+    <div style="padding:0 20px 20px;display:flex;gap:10px">
+      <button class="btn btn-navy" onclick="window.print()">🖨 Imprimir Acta</button>
+    </div>
+  </div>
+</div>
+
+</main><!-- /main -->
+
+<!-- ══ MODAL NUEVO SOCIO ════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalSocio">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>👤 Registrar Nuevo Socio</h3>
+      <button class="modal-close" onclick="closeModal('modalSocio')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombres <span>*</span></label>
+          <input type="text" id="sNombres" placeholder="Ej: Carlos Andrés">
+        </div>
+        <div class="form-group">
+          <label>Apellidos <span>*</span></label>
+          <input type="text" id="sApellidos" placeholder="Ej: González Muñoz">
+        </div>
+        <div class="form-group">
+          <label>RUT <span>*</span></label>
+          <input type="text" id="sRut" placeholder="12.345.678-9">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="sTelefono" placeholder="+56 9 1234 5678">
+        </div>
+        <div class="form-group full">
+          <label>Correo Electrónico</label>
+          <input type="email" id="sEmail" placeholder="nombre@correo.cl">
+        </div>
+        <div class="form-group">
+          <label>Calidad <span>*</span></label>
+          <select id="sCalidad">
+            <option value="">Seleccione...</option>
+            <option>Socio Fundador</option>
+            <option>Socio Pleno</option>
+            <option>Socio Honorario</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado <span>*</span></label>
+          <select id="sEstado">
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="PASIVO">PASIVO</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeModal('modalSocio')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarSocio()">✅ Guardar Socio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL NUEVA REUNIÓN ══════════════════════════════════════ -->
+<div class="modal-overlay" id="modalReunion">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📅 Registrar Nueva Reunión</h3>
+      <button class="modal-close" onclick="closeModal('modalReunion')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fecha <span>*</span></label>
+          <input type="date" id="rFecha">
+        </div>
+        <div class="form-group">
+          <label>Tipo <span>*</span></label>
+          <select id="rTipo">
+            <option value="">Seleccione...</option>
+            <option>Ordinaria</option>
+            <option>Extraordinaria</option>
+            <option>Especial</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lugar / Plataforma <span>*</span></label>
+          <input type="text" id="rLugar" placeholder="Ej: Sala Directorio / Zoom">
+        </div>
+        <div class="form-group">
+          <label>Quórum Requerido</label>
+          <input type="number" id="rQuorum" placeholder="Ej: 8" min="1">
+        </div>
+        <div class="form-group full">
+          <label>Tema Principal <span>*</span></label>
+          <input type="text" id="rTema" placeholder="Ej: Balance Anual 2025">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeModal('modalReunion')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarReunion()">✅ Guardar Reunión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALERTA ════════════════════════════════════════════════════ -->
+<div class="alert" id="alertBox"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FIREBASE — datos en la nube, accesibles desde cualquier PC
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAg6fdKRnwcppQ932tK9oia_ETPHIzmFbw",
+  authDomain: "finanzas-2026-ac88e.firebaseapp.com",
+  databaseURL: "https://finanzas-2026-ac88e-default-rtdb.firebaseio.com",
+  projectId: "finanzas-2026-ac88e",
+  storageBucket: "finanzas-2026-ac88e.firebasestorage.app",
+  messagingSenderId: "458435379765",
+  appId: "1:458435379765:web:daf52c59503f79e494677c"
+};
+
+let fbDB = null;
+let fbOK = false;
+let isEditor = false;
+
+// ─── AUTENTICACIÓN (misma cuenta que Control Financiero) ───
+function applyAuthUI(){
+  const lo = document.getElementById('auth-logged-out');
+  const li = document.getElementById('auth-logged-in');
+  if (lo) lo.style.display = isEditor ? 'none' : 'flex';
+  if (li) li.style.display = isEditor ? 'flex' : 'none';
+  document.querySelectorAll('.edit-only').forEach(el=>{ el.style.display = isEditor ? '' : 'none'; });
+}
+
+function requiereEditor(){
+  if (!isEditor) { showAlert('🔒 Debes iniciar sesión con la clave para editar', true); return false; }
+  return true;
+}
+
+async function iniciarSesion(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-pass').value;
+  const msg=document.getElementById('auth-msg');
+  msg.textContent='';
+  if(!email||!pass){msg.textContent='Ingresa correo y clave';return;}
+  if(typeof firebase==='undefined'){msg.textContent='Firebase no disponible aún, intenta de nuevo';return;}
+  try{
+    await firebase.auth().signInWithEmailAndPassword(email,pass);
+    document.getElementById('auth-pass').value='';
+  }catch(e){
+    msg.textContent='Correo o clave incorrectos';
+  }
+}
+
+function cerrarSesion(){
+  if(typeof firebase!=='undefined') firebase.auth().signOut();
+}
+
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    fbDB = firebase.database();
+    fbOK = true;
+    firebase.auth().onAuthStateChanged(function(user){
+      isEditor = !!user;
+      applyAuthUI();
+      try { renderDashboard(); } catch(e){}
+      try { if(document.getElementById('sec-socios')) renderSocios(); } catch(e){}
+      try { if(document.getElementById('sec-reuniones')) renderReuniones(); } catch(e){}
+    });
+    console.log('✅ Firebase conectado');
+  } catch(e) {
+    console.warn('Firebase no disponible:', e);
+    fbOK = false;
+  }
+}
+
+const LS = 'golf_asistencia_2026';
+
+// ── Guardar en Firebase + localStorage de respaldo ─────────
+async function fbSave() {
+  const data = { socios: _socios, reuniones: _reuniones, asistencia: _asistencia, ts: Date.now() };
+  try { localStorage.setItem(LS, JSON.stringify(data)); } catch(e) {}
+  if (fbOK && fbDB) {
+    try { await fbDB.ref('asistencia2026').set(data); } catch(e) { console.warn(e); }
+  }
+}
+
+// ── Cargar desde Firebase ──────────────────────────────────
+async function fbLoad() {
+  if (fbOK && fbDB) {
+    try {
+      const snap = await fbDB.ref('asistencia2026').get();
+      if (snap.exists()) {
+        const d = snap.val();
+        if (d.socios)     _socios     = d.socios     || [];
+        if (d.reuniones)  _reuniones  = d.reuniones  || [];
+        if (d.asistencia) _asistencia = d.asistencia || {};
+        return;
+      }
+    } catch(e) { console.warn(e); }
+  }
+  // fallback localStorage
+  try {
+    const raw = localStorage.getItem(LS);
+    if (raw) {
+      const d = JSON.parse(raw);
+      _socios     = d.socios     || [];
+      _reuniones  = d.reuniones  || [];
+      _asistencia = d.asistencia || {};
+    }
+  } catch(e) {}
+}
+
+// ── Estructuras de datos en memoria ───────────────────────
+let _socios     = [];
+let _reuniones  = [];
+let _asistencia = {}; // key: "reunionId-socioId" = true/false
+
+// ── Helpers compatibles con el resto del código ───────────
+function dbGet(store) {
+  if (store === 'socios')     return Promise.resolve(_socios);
+  if (store === 'reuniones')  return Promise.resolve(_reuniones);
+  if (store === 'asistencia') return Promise.resolve(Object.entries(_asistencia).map(([key,v]) => {
+    const [rId, sId] = key.split('-');
+    return { key, reunionId: parseInt(rId), socioId: parseInt(sId), presente: v };
+  }));
+  return Promise.resolve([]);
+}
+
+function dbPut(store, obj) {
+  if (store === 'socios') {
+    const idx = _socios.findIndex(s => s.id === obj.id);
+    if (idx >= 0) _socios[idx] = obj;
+    else { obj.id = Date.now() + Math.floor(Math.random()*1000); _socios.push(obj); }
+  } else if (store === 'reuniones') {
+    const idx = _reuniones.findIndex(r => r.id === obj.id);
+    if (idx >= 0) _reuniones[idx] = obj;
+    else { obj.id = Date.now() + Math.floor(Math.random()*1000); _reuniones.push(obj); }
+  } else if (store === 'asistencia') {
+    _asistencia[obj.key] = obj.presente;
+  }
+  fbSave();
+  return Promise.resolve(obj.id || obj.key);
+}
+
+function dbDel(store, key) {
+  if (store === 'socios')    _socios    = _socios.filter(s => s.id !== key);
+  if (store === 'reuniones') _reuniones = _reuniones.filter(r => r.id !== key);
+  if (store === 'asistencia') delete _asistencia[key];
+  fbSave();
+  return Promise.resolve();
+}
+
+function initDB() { return Promise.resolve(); }
+
+// ══ DATOS DE EJEMPLO (solo primera vez) ══════════════════════
+const sociosEjemplo = [
+  { nombres:'Carlos Andrés',   apellidos:'González Muñoz',  rut:'12.345.678-9', telefono:'+56 9 1234 5678', email:'c.gonzalez@golf.cl', calidad:'Socio Fundador', estado:'ACTIVO' },
+  { nombres:'María Fernanda',  apellidos:'López Soto',       rut:'13.456.789-0', telefono:'+56 9 2345 6789', email:'m.lopez@golf.cl',    calidad:'Socio Pleno',    estado:'ACTIVO' },
+  { nombres:'Roberto Esteban', apellidos:'Martínez Vera',    rut:'14.567.890-1', telefono:'+56 9 3456 7890', email:'r.martinez@golf.cl', calidad:'Socio Pleno',    estado:'ACTIVO' },
+  { nombres:'Ana Cecilia',     apellidos:'Rojas Fuentes',    rut:'15.678.901-2', telefono:'+56 9 4567 8901', email:'a.rojas@golf.cl',    calidad:'Socio Honorario',estado:'ACTIVO' },
+  { nombres:'Diego Ignacio',   apellidos:'Torres Castro',    rut:'16.789.012-3', telefono:'+56 9 5678 9012', email:'d.torres@golf.cl',   calidad:'Socio Pleno',    estado:'ACTIVO' },
+  { nombres:'Patricia Elena',  apellidos:'Fuentes Díaz',     rut:'17.890.123-4', telefono:'+56 9 6789 0123', email:'p.fuentes@golf.cl',  calidad:'Socio Fundador', estado:'ACTIVO' },
+  { nombres:'Hernán Augusto',  apellidos:'Castro Peña',      rut:'18.901.234-5', telefono:'+56 9 7890 1234', email:'h.castro@golf.cl',   calidad:'Socio Pleno',    estado:'PASIVO' },
+  { nombres:'Claudia Isabel',  apellidos:'Morales Ríos',     rut:'19.012.345-6', telefono:'+56 9 8901 2345', email:'c.morales@golf.cl',  calidad:'Socio Pleno',    estado:'ACTIVO' },
+  { nombres:'Felipe Eduardo',  apellidos:'Navarro Silva',    rut:'10.123.456-7', telefono:'+56 9 9012 3456', email:'f.navarro@golf.cl',  calidad:'Socio Honorario',estado:'PASIVO' },
+  { nombres:'Valentina Paz',   apellidos:'Reyes Contreras',  rut:'11.234.567-8', telefono:'+56 9 0123 4567', email:'v.reyes@golf.cl',    calidad:'Socio Pleno',    estado:'ACTIVO' },
+];
+
+const reunionesEjemplo = [
+  { fecha:'2025-01-15', tipo:'Ordinaria',     lugar:'Sala Directorio', tema:'Balance Anual 2024',       quorum:8 },
+  { fecha:'2025-02-12', tipo:'Ordinaria',     lugar:'Sala Directorio', tema:'Presupuesto 2025',          quorum:8 },
+  { fecha:'2025-03-05', tipo:'Extraordinaria',lugar:'Zoom',            tema:'Modificación Estatutos',    quorum:8 },
+  { fecha:'2025-04-09', tipo:'Ordinaria',     lugar:'Sala Directorio', tema:'Informe Auditoría',         quorum:8 },
+];
+
+const asistenciaEjemplo = {
+  // reunion_id - socio_id
+};
+
+async function seedData() {
+  // Con Firebase los datos ya vienen de la nube — no se cargan datos de ejemplo
+  // Solo agregar ejemplos si es la primera vez (sin datos en Firebase ni localStorage)
+  if (_socios.length > 0) return;
+
+  for (const s of sociosEjemplo) await dbPut('socios', s);
+  for (const r of reunionesEjemplo) await dbPut('reuniones', r);
+
+  const raw = [
+    [1,1,1,1,0,1,1,1,1,1],
+    [1,0,1,1,1,1,0,1,0,1],
+    [1,1,1,1,1,1,1,1,1,1],
+    [0,1,1,1,0,1,1,1,0,1],
+  ];
+  for (let ri=0; ri<_reuniones.length; ri++) {
+    for (let si=0; si<_socios.length; si++) {
+      const v = ri < raw.length && si < raw[ri].length ? raw[ri][si] : 0;
+      _asistencia[`${_reuniones[ri].id}-${_socios[si].id}`] = v === 1;
+    }
+  }
+  await fbSave();
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'dashboard')   renderDashboard();
+  if (id === 'socios')      renderSocios();
+  if (id === 'reuniones')   renderReuniones();
+  if (id === 'asistencia')  initAsistencia();
+  if (id === 'acta')        initActa();
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showAlert(msg, error=false) {
+  const el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = 'alert show' + (error ? ' error' : '');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function badgeCalidad(cal) {
+  const map = { 'Socio Fundador':'fundador','Socio Pleno':'pleno','Socio Honorario':'honorario' };
+  return `<span class="badge badge-${map[cal]||'pleno'}">${cal||'—'}</span>`;
+}
+function badgeEstado(est) {
+  return `<span class="badge badge-${(est||'').toLowerCase()}">${est||'—'}</span>`;
+}
+
+function fmtFecha(iso) {
+  if (!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function pctColor(p) {
+  if (p >= 0.9)  return '#1B5E20';
+  if (p >= 0.75) return '#0D47A1';
+  if (p >= 0.6)  return '#E65100';
+  return '#C62828';
+}
+
+function medalPct(p) {
+  if (p >= 0.9)  return '🥇';
+  if (p >= 0.75) return '🥈';
+  if (p >= 0.6)  return '🥉';
+  return '⚠️';
+}
+
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════
+async function renderDashboard() {
+  const socios    = await dbGet('socios');
+  const reuniones = await dbGet('reuniones');
+  const asistencia= await dbGet('asistencia');
+
+  const activos = socios.filter(s => s.estado === 'ACTIVO').length;
+  const prom = socios.length && reuniones.length
+    ? (asistencia.filter(a => a.presente).length / (socios.length * reuniones.length) * 100).toFixed(1)
+    : 0;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-value">${socios.length}</div>
+      <div class="kpi-label">Total Socios</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value">${activos}</div>
+      <div class="kpi-label">Socios Activos</div>
+    </div>
+    <div class="kpi navy">
+      <div class="kpi-value">${reuniones.length}</div>
+      <div class="kpi-label">Reuniones Realizadas</div>
+    </div>
+    <div class="kpi gold">
+      <div class="kpi-value">${prom}%</div>
+      <div class="kpi-label">Asistencia Promedio</div>
+    </div>
+  `;
+
+  // Ranking
+  const ranking = socios.map(s => {
+    const pres = asistencia.filter(a => a.socioId === s.id && a.presente).length;
+    const total = reuniones.length;
+    const pct = total ? pres / total : 0;
+    return { ...s, pres, total, pct };
+  }).sort((a,b) => b.pct - a.pct);
+
+  document.getElementById('rankingBody').innerHTML = ranking.length
+    ? ranking.map((s, i) => {
+        const pct = (s.pct*100).toFixed(1);
+        const col = pctColor(s.pct);
+        return `<div class="ranking-row">
+          <div class="ranking-pos">${i+1}</div>
+          <div class="ranking-name">
+            <strong>${s.apellidos}, ${s.nombres}</strong>
+            <span>${badgeEstado(s.estado)}</span>
+          </div>
+          <div style="width:120px">
+            <div class="pct-bar">
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
+              <div class="pct-num" style="color:${col}">${medalPct(s.pct)} ${pct}%</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="icon">👥</div><p>Sin socios registrados</p></div>';
+
+  // Últimas reuniones
+  const ultimas = [...reuniones].sort((a,b) => b.fecha.localeCompare(a.fecha)).slice(0,4);
+  document.getElementById('lastReuniones').innerHTML = ultimas.length
+    ? `<div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Tema</th><th>Asistentes</th><th>Quórum</th></tr></thead>
+        <tbody>${ultimas.map(r => {
+          const asist = asistencia.filter(a => a.reunionId === r.id && a.presente).length;
+          const ok = r.quorum ? asist >= r.quorum : true;
+          return `<tr>
+            <td>${fmtFecha(r.fecha)}</td>
+            <td>${r.tipo}</td>
+            <td>${r.tema}</td>
+            <td style="text-align:center"><strong>${asist}</strong></td>
+            <td><span class="badge ${ok?'badge-activo':'badge-pasivo'}">${ok?'✅ OK':'❌ Sin quórum'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`
+    : '<div class="empty"><div class="icon">📅</div><p>Sin reuniones registradas</p></div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// SOCIOS
+// ══════════════════════════════════════════════════════════════
+async function renderSocios() {
+  const socios  = await dbGet('socios');
+  const filtroQ = (document.getElementById('searchSocios')?.value||'').toLowerCase();
+  const filtroE = document.getElementById('filtroEstado')?.value||'';
+
+  const filtrados = socios.filter(s => {
+    const texto = `${s.nombres} ${s.apellidos} ${s.rut}`.toLowerCase();
+    return texto.includes(filtroQ) && (filtroE === '' || s.estado === filtroE);
+  });
+
+  document.getElementById('tablaSocios').innerHTML = filtrados.length
+    ? filtrados.map((s, i) => `<tr>
+        <td>${i+1}</td>
+        <td><strong>${s.apellidos}</strong></td>
+        <td>${s.nombres}</td>
+        <td style="font-size:0.8rem">${s.rut||'—'}</td>
+        <td style="font-size:0.8rem">${s.telefono||'—'}</td>
+        <td>${badgeCalidad(s.calidad)}</td>
+        <td>${badgeEstado(s.estado)}</td>
+        <td>
+          ${isEditor?`<button class="btn btn-sm btn-navy" onclick="editarSocio(${s.id})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="eliminarSocio(${s.id})" style="margin-left:4px">🗑</button>`:''}
+        </td>
+      </tr>`).join('')
+    : `<tr><td colspan="8"><div class="empty"><div class="icon">👥</div><p>No se encontraron socios</p></div></td></tr>`;
+}
+
+async function guardarSocio() {
+  if(!requiereEditor()) return;
+  const nombres   = document.getElementById('sNombres').value.trim();
+  const apellidos = document.getElementById('sApellidos').value.trim();
+  const rut       = document.getElementById('sRut').value.trim();
+  const calidad   = document.getElementById('sCalidad').value;
+  const estado    = document.getElementById('sEstado').value;
+
+  if (!nombres || !apellidos || !rut || !calidad) {
+    showAlert('Complete los campos obligatorios (*)', true); return;
+  }
+
+  const obj = {
+    nombres, apellidos, rut,
+    telefono: document.getElementById('sTelefono').value.trim(),
+    email:    document.getElementById('sEmail').value.trim(),
+    calidad, estado
+  };
+
+  const editId = document.getElementById('modalSocio').dataset.editId;
+  if (editId) { obj.id = parseInt(editId); delete document.getElementById('modalSocio').dataset.editId; }
+
+  await dbPut('socios', obj);
+  closeModal('modalSocio');
+  ['sNombres','sApellidos','sRut','sTelefono','sEmail'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('sCalidad').value='';
+  document.getElementById('sEstado').value='ACTIVO';
+  showAlert('✅ Socio guardado en la nube ☁');
+  renderSocios();
+  renderDashboard();
+}
+
+async function editarSocio(id) {
+  if(!requiereEditor()) return;
+  const socios = await dbGet('socios');
+  const s = socios.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('sNombres').value   = s.nombres||'';
+  document.getElementById('sApellidos').value = s.apellidos||'';
+  document.getElementById('sRut').value       = s.rut||'';
+  document.getElementById('sTelefono').value  = s.telefono||'';
+  document.getElementById('sEmail').value     = s.email||'';
+  document.getElementById('sCalidad').value   = s.calidad||'';
+  document.getElementById('sEstado').value    = s.estado||'ACTIVO';
+  document.getElementById('modalSocio').dataset.editId = id;
+  openModal('modalSocio');
+}
+
+async function eliminarSocio(id) {
+  if(!requiereEditor()) return;
+  if (!confirm('¿Eliminar este socio? Se borrarán también sus registros de asistencia.')) return;
+  await dbDel('socios', id);
+  const asistencia = await dbGet('asistencia');
+  for (const a of asistencia.filter(x => x.socioId === id)) await dbDel('asistencia', a.key);
+  showAlert('🗑 Socio eliminado de la nube');
+  renderSocios();
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════════════════════
+// REUNIONES
+// ══════════════════════════════════════════════════════════════
+async function renderReuniones() {
+  const reuniones  = await dbGet('reuniones');
+  const asistencia = await dbGet('asistencia');
+
+  document.getElementById('tablaReuniones').innerHTML = reuniones.length
+    ? [...reuniones].sort((a,b) => b.fecha.localeCompare(a.fecha)).map((r, i) => {
+        const asist = asistencia.filter(a => a.reunionId === r.id && a.presente).length;
+        const ok = r.quorum ? asist >= r.quorum : true;
+        return `<tr>
+          <td>${reuniones.length - i}</td>
+          <td>${fmtFecha(r.fecha)}</td>
+          <td>${r.tipo}</td>
+          <td>${r.lugar||'—'}</td>
+          <td>${r.tema}</td>
+          <td style="text-align:center">${r.quorum||'—'}</td>
+          <td style="text-align:center"><strong>${asist}</strong></td>
+          <td><span class="badge ${ok?'badge-activo':'badge-pasivo'}">${ok?'✅ Quórum':'❌ Sin quórum'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-navy" onclick="irAsistencia(${r.id})">✅ Asistencia</button>
+            ${isEditor?`<button class="btn btn-sm btn-danger" onclick="eliminarReunion(${r.id})" style="margin-left:4px">🗑</button>`:''}
+          </td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="9"><div class="empty"><div class="icon">📅</div><p>Sin reuniones registradas</p></div></td></tr>`;
+}
+
+async function guardarReunion() {
+  if(!requiereEditor()) return;
+  const fecha  = document.getElementById('rFecha').value;
+  const tipo   = document.getElementById('rTipo').value;
+  const lugar  = document.getElementById('rLugar').value.trim();
+  const tema   = document.getElementById('rTema').value.trim();
+  const quorum = parseInt(document.getElementById('rQuorum').value)||0;
+
+  if (!fecha || !tipo || !tema) {
+    showAlert('Complete los campos obligatorios (*)', true); return;
+  }
+
+  await dbPut('reuniones', { fecha, tipo, lugar, tema, quorum });
+
+  // Crear registros vacíos de asistencia para todos los socios
+  const socios   = await dbGet('socios');
+  const reuniones= await dbGet('reuniones');
+  const r = reuniones[reuniones.length-1];
+  for (const s of socios) {
+    await dbPut('asistencia', {
+      key: `${r.id}-${s.id}`,
+      reunionId: r.id,
+      socioId: s.id,
+      presente: false
+    });
+  }
+
+  closeModal('modalReunion');
+  document.getElementById('rFecha').value = '';
+  document.getElementById('rLugar').value = '';
+  document.getElementById('rTema').value  = '';
+  document.getElementById('rQuorum').value= '';
+  document.getElementById('rTipo').value  = '';
+  showAlert('✅ Reunión guardada en la nube ☁');
+  renderReuniones();
+  renderDashboard();
+  poblarSelectsReunion();
+}
+
+async function eliminarReunion(id) {
+  if(!requiereEditor()) return;
+  if (!confirm('¿Eliminar esta reunión y su asistencia?')) return;
+  await dbDel('reuniones', id);
+  const asistencia = await dbGet('asistencia');
+  for (const a of asistencia.filter(x => x.reunionId === id)) await dbDel('asistencia', a.key);
+  showAlert('🗑 Reunión eliminada de la nube');
+  renderReuniones();
+  renderDashboard();
+  poblarSelectsReunion();
+}
+
+function irAsistencia(reunionId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-asistencia').classList.add('active');
+  document.querySelectorAll('nav button')[3].classList.add('active');
+  initAsistencia(reunionId);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ASISTENCIA
+// ══════════════════════════════════════════════════════════════
+async function poblarSelectsReunion() {
+  const reuniones = await dbGet('reuniones');
+  const sorted = [...reuniones].sort((a,b) => b.fecha.localeCompare(a.fecha));
+  const opts = sorted.map(r => `<option value="${r.id}">${fmtFecha(r.fecha)} — ${r.tema}</option>`).join('');
+
+  ['selectReunionAsist','selectActaReunion'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">— Seleccione una reunión —</option>' + opts;
+  });
+}
+
+async function initAsistencia(preSelectId) {
+  await poblarSelectsReunion();
+  if (preSelectId) {
+    document.getElementById('selectReunionAsist').value = preSelectId;
+  }
+  renderAsistencia();
+  renderResumenSocios();
+}
+
+async function renderAsistencia() {
+  const reunionId = parseInt(document.getElementById('selectReunionAsist').value);
+  const panel = document.getElementById('asistenciaPanel');
+
+  if (!reunionId) {
+    panel.innerHTML = '<div class="empty"><div class="icon">📋</div><p>Seleccione una reunión para marcar asistencia</p></div>';
+    return;
+  }
+
+  const socios     = await dbGet('socios');
+  const asistencia = await dbGet('asistencia');
+  const reuniones  = await dbGet('reuniones');
+  const reunion    = reuniones.find(r => r.id === reunionId);
+
+  const totalPresentes = asistencia.filter(a => a.reunionId === reunionId && a.presente).length;
+
+  panel.innerHTML = `
+    <div style="background:var(--navy);color:var(--white);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div><strong style="color:var(--gold)">${fmtFecha(reunion?.fecha)}</strong><br><span style="font-size:0.82rem;color:var(--green4)">${reunion?.tipo} · ${reunion?.tema}</span></div>
+      <div style="margin-left:auto;text-align:center">
+        <div style="font-size:1.8rem;font-weight:700;color:var(--gold)">${totalPresentes}</div>
+        <div style="font-size:0.75rem;color:var(--green4)">PRESENTES</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.8rem;font-weight:700;color:#EF9A9A">${socios.length - totalPresentes}</div>
+        <div style="font-size:0.75rem;color:var(--green4)">AUSENTES</div>
+      </div>
+      ${isEditor?`<button class="btn btn-gold btn-sm" onclick="marcarTodos(${reunionId},true)">✅ Marcar todos</button>
+      <button class="btn btn-sm" style="background:#EF9A9A;color:var(--red)" onclick="marcarTodos(${reunionId},false)">⬜ Desmarcar todos</button>`:''}
+    </div>
+    <div class="asist-grid">
+      ${socios.map(s => {
+        const reg = asistencia.find(a => a.reunionId === reunionId && a.socioId === s.id);
+        const presente = reg ? reg.presente : false;
+        return `<div class="asist-row" id="row-${reunionId}-${s.id}">
+          <button class="asist-btn ${presente?'presente':'ausente'}" id="btn-${reunionId}-${s.id}"
+            onclick="toggleAsistencia(${reunionId},${s.id})">
+            ${presente ? '✅' : '⬜'}
+          </button>
+          <div class="asist-name">${s.apellidos}, ${s.nombres}</div>
+          <div class="asist-estado">${badgeEstado(s.estado)}</div>
+          ${badgeCalidad(s.calidad)}
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+async function toggleAsistencia(reunionId, socioId) {
+  if(!requiereEditor()) return;
+  const key = `${reunionId}-${socioId}`;
+  const asistencia = await dbGet('asistencia');
+  const reg = asistencia.find(a => a.key === key);
+  const nuevo = reg ? !reg.presente : true;
+
+  await dbPut('asistencia', { key, reunionId, socioId, presente: nuevo });
+
+  // Actualizar botón sin re-renderizar todo
+  const btn = document.getElementById(`btn-${reunionId}-${socioId}`);
+  if (btn) {
+    btn.className = `asist-btn ${nuevo ? 'presente' : 'ausente'}`;
+    btn.textContent = nuevo ? '✅' : '⬜';
+  }
+
+  // Actualizar contador
+  const todas = await dbGet('asistencia');
+  const pres = todas.filter(a => a.reunionId === reunionId && a.presente).length;
+  const socios = await dbGet('socios');
+  const totalEl = document.querySelector(`#asistenciaPanel [style*="font-size:1.8rem"]`);
+  // Re-render solo el panel de resumen
+  renderResumenSocios();
+  renderDashboard();
+}
+
+async function marcarTodos(reunionId, valor) {
+  if(!requiereEditor()) return;
+  const socios = await dbGet('socios');
+  for (const s of socios) {
+    await dbPut('asistencia', { key:`${reunionId}-${s.id}`, reunionId, socioId:s.id, presente:valor });
+  }
+  showAlert(valor ? '✅ Todos marcados como presentes' : '⬜ Todos marcados como ausentes');
+  renderAsistencia();
+  renderResumenSocios();
+  renderDashboard();
+}
+
+async function renderResumenSocios() {
+  const socios     = await dbGet('socios');
+  const reuniones  = await dbGet('reuniones');
+  const asistencia = await dbGet('asistencia');
+
+  const rows = socios.map(s => {
+    const pres  = asistencia.filter(a => a.socioId === s.id && a.presente).length;
+    const total = reuniones.length;
+    const aus   = total - pres;
+    const pct   = total ? pres/total : 0;
+    const col   = pctColor(pct);
+    return { s, pres, aus, pct, col };
+  }).sort((a,b) => b.pct - a.pct);
+
+  document.getElementById('resumenSocios').innerHTML = rows.length
+    ? rows.map(({s, pres, aus, pct, col}) => `<tr>
+        <td><strong>${s.apellidos}</strong>, ${s.nombres}</td>
+        <td style="text-align:center"><strong style="color:var(--green2)">${pres}</strong></td>
+        <td style="text-align:center"><strong style="color:var(--red)">${aus}</strong></td>
+        <td>
+          <div class="pct-bar">
+            <div class="bar-track"><div class="bar-fill" style="width:${(pct*100).toFixed(0)}%;background:${col}"></div></div>
+            <span class="pct-num" style="color:${col}">${medalPct(pct)} ${(pct*100).toFixed(1)}%</span>
+          </div>
+        </td>
+      </tr>`).join('')
+    : `<tr><td colspan="4"><div class="empty"><p>Sin datos</p></div></td></tr>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ACTA
+// ══════════════════════════════════════════════════════════════
+async function initActa() {
+  await poblarSelectsReunion();
+}
+
+async function renderActa() {
+  const reunionId = parseInt(document.getElementById('selectActaReunion').value);
+  const body = document.getElementById('actaBody');
+  if (!reunionId) {
+    body.innerHTML = '<div class="empty"><div class="icon">📄</div><p>Seleccione una reunión</p></div>';
+    return;
+  }
+
+  const socios     = await dbGet('socios');
+  const reuniones  = await dbGet('reuniones');
+  const asistencia = await dbGet('asistencia');
+  const reunion    = reuniones.find(r => r.id === reunionId);
+  const presentes  = socios.filter(s => {
+    const a = asistencia.find(x => x.reunionId === reunionId && x.socioId === s.id);
+    return a && a.presente;
+  });
+
+  body.innerHTML = `
+    <div style="font-family:'DM Sans',sans-serif;max-width:700px;margin:0 auto;padding:10px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:2rem">⛳</div>
+        <h2 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.4rem">FILIAL DE GOLF PAPUDO</h2>
+        <p style="color:var(--gray3);font-size:0.82rem">Fund. 1976 · Control de Asistencia de Socios</p>
+        <hr style="border:2px solid var(--green2);margin:10px 0">
+        <h3 style="color:var(--navy);font-size:1rem;text-transform:uppercase;letter-spacing:1px">ACTA DE REUNIÓN N° ${reunionId}</h3>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:0.88rem">
+        ${[
+          ['Fecha', fmtFecha(reunion?.fecha)],
+          ['Tipo', reunion?.tipo],
+          ['Lugar / Plataforma', reunion?.lugar||'—'],
+          ['Tema Principal', reunion?.tema],
+          ['Quórum Requerido', reunion?.quorum||'—'],
+          ['Total Presentes', presentes.length],
+        ].map(([k,v]) => `<tr>
+          <td style="padding:7px 12px;background:var(--green5);font-weight:600;width:40%;border:1px solid var(--green4)">${k}</td>
+          <td style="padding:7px 12px;border:1px solid var(--green4)">${v}</td>
+        </tr>`).join('')}
+      </table>
+
+      <h4 style="color:var(--navy);margin-bottom:8px;text-transform:uppercase;font-size:0.82rem;letter-spacing:1px">Lista de Asistencia</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:0.84rem;margin-bottom:18px">
+        <thead>
+          <tr style="background:var(--navy)">
+            <th style="padding:8px 12px;color:var(--gold);text-align:left">N°</th>
+            <th style="padding:8px 12px;color:var(--gold);text-align:left">Apellidos y Nombres</th>
+            <th style="padding:8px 12px;color:var(--gold);text-align:left">RUT</th>
+            <th style="padding:8px 12px;color:var(--gold);text-align:left">Calidad</th>
+            <th style="padding:8px 12px;color:var(--gold);text-align:center">Asistencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${socios.map((s, i) => {
+            const a = asistencia.find(x => x.reunionId === reunionId && x.socioId === s.id);
+            const pres = a && a.presente;
+            return `<tr style="background:${i%2===0?'var(--white)':'var(--green5)'}">
+              <td style="padding:7px 12px;border:1px solid var(--green4)">${i+1}</td>
+              <td style="padding:7px 12px;border:1px solid var(--green4)"><strong>${s.apellidos}</strong>, ${s.nombres}</td>
+              <td style="padding:7px 12px;border:1px solid var(--green4);font-size:0.8rem">${s.rut||'—'}</td>
+              <td style="padding:7px 12px;border:1px solid var(--green4)">${s.calidad||'—'}</td>
+              <td style="padding:7px 12px;border:1px solid var(--green4);text-align:center">${pres?'✅':'⬜'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px">
+        <div style="text-align:center;border-top:2px solid var(--navy);padding-top:8px">
+          <p style="font-size:0.82rem;color:var(--gray3)">Presidente</p>
+        </div>
+        <div style="text-align:center;border-top:2px solid var(--navy);padding-top:8px">
+          <p style="font-size:0.82rem;color:var(--gray3)">Secretario de Acta</p>
+        </div>
+      </div>
+
+      <div class="no-print" style="margin-top:34px;border:1px solid var(--green4);border-radius:10px;padding:16px;background:var(--green5)">
+        <h4 style="color:var(--navy);margin:0 0 10px;text-transform:uppercase;font-size:0.82rem;letter-spacing:1px">📎 Acta firmada (PDF)</h4>
+        ${reunion?.actaUrl ? `
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <a href="${reunion.actaUrl}" target="_blank" rel="noopener"
+               class="btn btn-navy btn-sm" style="text-decoration:none">📄 Ver / descargar acta firmada</a>
+            ${isEditor ? `<button class="btn btn-sm btn-danger" onclick="quitarActaUrl(${reunionId})">🗑 Quitar enlace</button>` : ''}
+          </div>` : `
+          <p style="font-size:0.84rem;color:var(--gray3);margin:0 0 10px">Todavía no hay un acta firmada adjunta para esta reunión.</p>`}
+
+        <div class="edit-only" style="margin-top:12px">
+          <label style="display:block;font-size:0.8rem;color:var(--navy);font-weight:600;margin-bottom:5px">
+            Pegue aquí el enlace del PDF (Google Drive, OneDrive, etc.)
+          </label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="url" id="actaUrlInput" value="${reunion?.actaUrl || ''}"
+                   placeholder="https://drive.google.com/..."
+                   style="flex:1;min-width:240px;padding:8px 10px;border:1px solid var(--green4);border-radius:7px;font-size:0.85rem">
+            <button class="btn btn-primary btn-sm" onclick="guardarActaUrl(${reunionId})">💾 Guardar enlace</button>
+          </div>
+          <p style="font-size:0.76rem;color:var(--gray3);margin:8px 0 0">
+            En Google Drive: clic derecho sobre el PDF → Compartir → "Cualquier persona con el enlace" → Copiar enlace.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Enlace del acta firmada en PDF ───────────────────────────
+async function guardarActaUrl(reunionId) {
+  if (!requiereEditor()) return;
+  const url = (document.getElementById('actaUrlInput').value || '').trim();
+  if (url && !/^https?:\/\//i.test(url)) {
+    showAlert('El enlace debe empezar con https://', true);
+    return;
+  }
+  const reuniones = await dbGet('reuniones');
+  const reunion = reuniones.find(r => r.id === reunionId);
+  if (!reunion) return;
+  reunion.actaUrl = url;
+  await dbPut('reuniones', reunion);
+  showAlert(url ? '✅ Enlace del acta guardado' : '✅ Enlace eliminado');
+  renderActa();
+}
+
+async function quitarActaUrl(reunionId) {
+  if (!requiereEditor()) return;
+  if (!confirm('¿Quitar el enlace del acta firmada?')) return;
+  const reuniones = await dbGet('reuniones');
+  const reunion = reuniones.find(r => r.id === reunionId);
+  if (!reunion) return;
+  reunion.actaUrl = '';
+  await dbPut('reuniones', reunion);
+  showAlert('✅ Enlace eliminado');
+  renderActa();
+}
+
+// ══════════════════════════════════════════════════════════════
+// FECHA HEADER
+// ══════════════════════════════════════════════════════════════
+function setDate() {
+  const d = new Date();
+  document.getElementById('headerDate').innerHTML =
+    `${d.toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  initFirebase();
+  applyAuthUI();
+  showAlert('☁ Conectando con la nube...');
+  await fbLoad();
+  await seedData();
+  setDate();
+  renderDashboard();
+  showAlert('✅ Datos cargados desde la nube');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
